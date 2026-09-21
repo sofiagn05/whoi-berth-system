@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 berths.db
 .pytest_cache/
+.claude/
