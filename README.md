@@ -7,6 +7,19 @@ Given a berth (of a known length) and a date range, the system tells you
 immediately whether a reservation is safe to make — no more eyeballing a
 grid for overlaps or guessing whether a boat will actually fit.
 
+## Why this matters to me
+
+WHOI's Schiller Center for Reef Solutions is racing to find and protect
+"super corals" before warming waters wipe them out, and the Fowler Center
+is building the tracking infrastructure to prove out ocean-based carbon
+removal — both real deadlines against a collapsing timeline. A dock
+schedule that needs someone to squint at a spreadsheet to catch a
+double-booking is exactly the kind of overhead that shouldn't be
+competing for anyone's attention when the actual work is this urgent.
+This project isn't just "build a scheduler" — it's removing one small,
+boring failure point so the people doing the reef and climate work don't
+have to think about berths at all.
+
 ## Quickstart
 
 ```bash
