@@ -6,7 +6,7 @@ setup:
 
 import: setup
 	rm -f berths.db
-	.venv/bin/python -m app.import_schedule data/dock_schedule_1997.csv
+	.venv/bin/python -m app.import_schedule data/years/dock_schedule_*.csv
 
 seed: setup
 	rm -f berths.db

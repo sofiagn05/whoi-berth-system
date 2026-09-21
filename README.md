@@ -23,12 +23,12 @@ have to think about berths at all.
 ## Quickstart
 
 ```bash
-make import   # sets up a venv and loads the real 1997 dock schedule sample
+make import   # sets up a venv and loads all 23 real years of the dock schedule (1997-2019)
 make run      # serves the app at http://localhost:8420
 
-# or, instead of `make import`, load synthetic demo data with intentional
-# conflicts baked in -- useful for seeing the resolver actually do something,
-# since the real 1997 sample happens to be conflict-free:
+# or, instead of `make import`, load small synthetic demo data with an
+# intentional, easy-to-see conflict baked in -- useful as a quick sanity
+# check of the resolver in isolation:
 # make seed
 
 make test     # runs the test suite (also runs automatically on every push, see badge above)
@@ -39,15 +39,19 @@ No `make`? The equivalent by hand:
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m app.import_schedule data/dock_schedule_1997.csv   # or: python -m app.seed
+python -m app.import_schedule data/years/dock_schedule_*.csv   # or: python -m app.seed
 uvicorn app.main:app --reload --port 8420
 ```
 
+That loads all 23 years (1997-2019) from `data/years/*.csv`, which were
+exported from the source workbook (`data/dock_schedule_workbook.ods`) with
+`scripts/export_ods_years.py` — see **The real data: what 23 years of it
+actually looked like**, below, for what that took.
+
 Once it's running, upload `data/vessel_dimensions_sample.csv` under "Vessel
 dimensions" on the homepage (or `curl -F file=@data/vessel_dimensions_sample.csv
-localhost:8420/vessels/import`) to see fit-checking go from "unknown" to
-active for the real 1997 vessels — see **Closing the vessel-dimensions gap**,
-below.
+localhost:8420/vessels/import`) to activate fit-checking for the 15 vessels
+it covers — see **Closing the vessel-dimensions gap**, below.
 
 ## What it actually checks
 
@@ -117,51 +121,91 @@ Two features go past "detect and flag" into "understand the pattern" and
   The endpoint is a preview by default; nothing is written to the database
   until the plan is explicitly applied.
 
-  The 1997 sample data happens to be conflict-free, so there's nothing for
-  the resolver to visibly do against it — run `python -m app.seed` instead
-  (on a fresh `berths.db`) to see it resolve an actual double-booking
-  end-to-end, including the weight-preference behavior described above.
+  Across all 23 real years, every double-booking that turns up lands on
+  the `Unidentified` pseudo-berth (see below) — so there's a real
+  conflict to resolve, but the "correct" fix (which of the two *actual*
+  unlabeled berths each reservation belongs to) isn't something the data
+  can answer. `python -m app.seed` instead gives a small, clean,
+  intentional conflict on a normal named berth if you want to see the
+  weight-preference behavior in isolation.
 
-## A note on the real data
+## The real data: what 23 years of it actually looked like
 
-The attached sample (`data/dock_schedule_1997.csv`) is the literal grid:
-each month is a header row, a day-of-month row, then one row per berth,
-with occupied cells naming the vessel or event. Berth length is embedded
-in the row label (`North Pier West - 410'`), which the importer parses
-directly rather than requiring it to be re-entered.
+The sample originally provided was one CSV export of a single tab (1997)
+from a larger workbook. I later got the full source workbook
+(`data/dock_schedule_workbook.ods`) and found it actually holds all 23
+year tabs (1997-2019), plus a vessel-contact registry, a guest-yacht
+registry, a pre-computed usage summary, and a "Tours" tab explicitly
+marked stale ("Tours are now tracked in a separate workbook; this tab is
+kept for reference") -- which I left untouched rather than importing.
+`scripts/export_ods_years.py` pulls the 23 year tabs into the same raw
+grid CSV format the importer already parsed: each month is a header row,
+a day-of-month row, then one row per berth, with occupied cells naming
+the vessel or event, and berth length embedded in the row label
+(`North Pier West - 410'`).
 
-Two things worth flagging about this data:
+What I didn't expect was that the layout isn't consistent *within that
+one workbook* -- pointing the importer at all 23 years surfaced five
+more real problems, on top of format assumptions that happened to hold
+for the single 1997 CSV I started with:
 
-- **The row layout isn't consistent between months.** In August, the
-  weekday abbreviations (M/T/W/...) sit on their own row between the month
-  header and the day numbers. In September onward, they're packed into the
-  header row itself. A parser that assumes a fixed row offset silently
-  drops every month after the first — it did, in an earlier version of
-  this importer. The fix (`app/import_schedule.py::parse_grid_csv`) finds
-  the day-number row by content (first blank-label row that's mostly
-  digits) instead of by position. Worth knowing before pointing this at
-  the other 22 years of tabs, which may have their own quirks.
-- **Vessel dimensions (LOA/beam/draft) are not in this schedule at all** —
-  only names and berth assignments. The importer creates vessel records
-  from the schedule with dimensions left unset, and the fit-checker treats
-  "unknown" as its own explicit state (a warning, not a silent pass).
-  Fit-checking becomes fully active for a vessel as soon as its dimensions
-  are filled in — see **Closing the vessel-dimensions gap**, below.
-- **One row has no berth label at all.** Below "South Float East" in
-  August, a row holding "R/V Amber Tide" has a blank first column — a
-  berth whose name and length were simply left blank in the source
-  spreadsheet. The first version of this importer treated any blank-label
-  row as the end of the month's block and silently dropped it — which is
-  worse than the month-layout bug above, since it loses a real
-  reservation rather than just misplacing one. It's now kept under an
-  explicit `Unidentified (unlabeled row in source schedule)` pseudo-berth
-  with an unknown length (`app/import_schedule.py` flags this with a
-  count on every import run), rather than invented or discarded. It shows
-  up in the calendar and audit like any other berth, but is excluded from
-  `/bookings/suggest` and the batch resolver as a *destination*, since
-  fit can't be verified for a berth of unknown length — the same
-  unknown-is-explicit treatment already used for missing vessel
-  dimensions, applied to the berth side too.
+- **The header/weekday/day-number row order has (at least) three
+  different arrangements** across the 23 years -- header alone then a
+  weekday row then a day-number row (1997); header with the weekday
+  letters packed in, day-numbers separate (1997, other months); and
+  header with the *day numbers* packed in, weekday row after (2005
+  onward). A parser that assumes a fixed offset -- or even that day
+  numbers are never on the header row -- gets the third case wrong.
+  Fixed by scanning the header row and the next few rows for whichever
+  one is mostly digits, regardless of position.
+- **Some years drop the year entirely from the header** ("January"
+  instead of "JANUARY 2014"). The year then has to come from context --
+  I use the year embedded in each file's own name, since each source
+  file already corresponds to exactly one year. Missing this meant 15 of
+  the 23 years imported zero bookings on the first attempt.
+- **Not every berth row uses the `NAME - NNN'` format.** "North Finger
+  Piers:" (colon, no length) and "Small craft slips (institution boats)"
+  (no length at all) are both real, frequently-booked berths that a
+  strict length-pattern match silently dropped -- six years of "North
+  Finger Piers:" reservations, gone, before this was caught. They're now
+  kept under their own names with an unknown length, the same
+  unknown-is-explicit treatment used for missing vessel dimensions.
+- **One row has no berth label at all.** A blank-label row with real
+  occupant data used to be indistinguishable from a genuinely blank
+  separator row ending the month's block -- silently dropping the
+  reservation, which is worse than a misplaced one. It's now kept under
+  an explicit `Unidentified (unlabeled row in source schedule)`
+  pseudo-berth instead (134 bookings across all 23 years), excluded from
+  `/bookings/suggest` and the resolver as a *destination* since fit can't
+  be verified for a berth of unknown length.
+- **A header row was itself corrupted in the source data.** The 2010
+  tab's November and December blocks are labeled "NOVEMBER 2018" /
+  "DECEMBER 2018" (a real typo, thirteen years off) and have vessel names
+  spilled into what should be pure day-number cells. Accepting that
+  row as the day-number row produced bookings dated in 2018 and a
+  garbage "vessel" literally named `1400`. Fixed with a sanity check: a
+  genuine day-number row always starts counting at 1; a row with several
+  digit cells that doesn't is rejected, and that month's block is skipped
+  rather than importing data built on a guess.
+- **Occupant cells sometimes hold a scheduling note, not a name** --
+  a bare time (`1400`), an `ETA 1200` remark, or an operational item like
+  `Bollard replacement, west face` or `Fueling @0800`. These aren't
+  reservations and are now recognized and dropped (`notes_skipped` in the
+  import stats) or classified as non-vessel events, rather than becoming
+  fake vessels in the registry.
+
+**With all of that fixed, does 23 years of data actually contain the
+double-bookings the original problem describes?** Yes, but with an
+important caveat: all 9 conflicts found land on the `Unidentified`
+pseudo-berth. That's expected, not a coincidence -- it's a catch-all for
+every reservation whose *true* berth was never recorded, so two
+same-day entries landing there means two things happened on the same day
+somewhere unlabeled, not necessarily the same physical spot. Every
+correctly-labeled, real-named berth is conflict-free across all 23
+years. Read that either way you like: as evidence the manual process
+mostly worked when a berth was actually written down, or as the reason
+that grid needed a computer in the first place -- unlabeled reservations
+are exactly the ones nobody could visually check for a conflict either.
 
 ## Closing the vessel-dimensions gap
 
@@ -170,12 +214,22 @@ takes a CSV (`name, loa_ft, beam_ft, draft_ft, vessel_type`) and fills in
 dimensions for vessels that already exist, matching by name — it updates,
 never creates, so a typo'd name in the CSV surfaces as "not found" instead
 of silently spawning a duplicate vessel. `data/vessel_dimensions_sample.csv`
-has plausible dimensions for all 15 vessels in the 1997 sample. Uploading it
-(via the UI or `curl -F file=@data/vessel_dimensions_sample.csv
-localhost:8420/vessels/import`) drops the audit's fit warnings from 31 to 1
-— the one that's left is the Amber Tide booking on the unlabeled berth
-above, correctly still unverifiable since it's the *berth's* length that's
-missing this time, not the vessel's.
+covers the 15 vessels from the original 1997 sample; across all 23 years
+there are 484 distinct vessels and 2,258 bookings total, so that CSV only
+closes a small slice of the full gap — uploading it activates fit-checking
+for those 15, the rest stay in the honest "unknown" state until their
+dimensions are filled in too.
+
+That's not a made-up number to fill in, either: the source workbook's
+"Science" and "Yachts" tabs are a real vessel/contact registry, with LOA
+(and, for guest yachts, draft) recorded per vessel — e.g. `M/Y Western
+Strand 52'` alongside an explicit `LOA: 65', Draft: 4'` field (the two
+numbers disagree, which is its own small data-quality note: the name's
+suffix looks like a model designation, not a reliable length, so the
+explicit field should win). I didn't parse these tabs into the vessel
+registry — they're a genuinely messy, multi-row-per-vessel layout — but
+extending `POST /vessels/import`'s CSV path to cover their fields is a
+scoped, well-understood next step, not a design question.
 
 ## Searching the history
 
@@ -199,11 +253,27 @@ search box jumps straight to the matching month in the calendar grid.
 
 ## What's not built
 
-Importing all 23 years and cross-referencing a real vessel registry for
-dimensions would need the rest of the workbook's tabs — the importer is
-written to take a list of yearly CSV exports (`python -m app.import_schedule
-year1.csv year2.csv ...`) and is idempotent (safe to re-run), so that's a
-data problem, not a code problem, once the rest of the tabs are exported.
+- **The Science/Yachts vessel registry isn't parsed into the database.**
+  Real LOA/draft data exists for a meaningful chunk of the 484 vessels;
+  extending the CSV importer to read those tabs (instead of a hand-built
+  CSV) would close most of the remaining fit-checking gap. Scoped above.
+- **A pre-computed "8YR Dock Summary" tab lists two berths** ("North
+  Finger Piers" -- now imported -- and "Marsh Landing") **that never
+  appear as a labeled row in any year's actual grid.** "Marsh Landing"
+  in particular doesn't show up anywhere in the 23 years of grid data at
+  all, only in that summary — meaning it's either an even older label
+  format this importer hasn't seen, or berth data that predates 1997.
+  Not investigated further; flagging it rather than guessing.
+- **~61 rows across 23 years (about 2% of all entries) sit in the gap
+  between two month blocks** -- a blank-labeled row with real occupant
+  data, positioned after the blank separator that ends one month but
+  before the next month's header is recognized. Unlike the in-block
+  unlabeled-row case, there's no reliable way to tell whether these
+  belong to the end of the prior month or the start of the next one
+  without guessing at a date, so they're currently dropped rather than
+  assigned a possibly-wrong one. Counting and surfacing them (the way
+  `unlabeled_berth_bookings` already does) instead of silently dropping
+  them would be the honest next step, even without a confident fix.
 
 ## A waste pass, after the features landed
 
@@ -222,11 +292,13 @@ deleted, and what was duplicated — before adding any more polish:
 - **Two heuristics can't currently fire against the real data**: the
   channel-adjacent nudge for deep-draft vessels and the T-head nudge for
   guest/novice crews (`crud.score_berth_for_vessel`) both depend on vessel
-  attributes the 1997 schedule doesn't carry (draft, guest/novice status),
-  so they're currently dead weight against real data specifically -- they
-  were named directly in the brief, so I kept them rather than cut them,
-  but they only start doing anything once that data is entered for real
-  vessels. Worth knowing rather than assuming they're already active.
+  attributes none of the 23 years of schedule data carries (draft,
+  guest/novice status), so they're currently dead weight against real
+  data specifically -- they were named directly in the brief, so I kept
+  them rather than cut them, but they only start doing anything once
+  that data is entered for real vessels (the Science/Yachts registry
+  above is where draft, at least, would come from). Worth knowing rather
+  than assuming they're already active.
 - **Two additions were about the *process*, not the app**: a `Makefile`
   (`make import && make run` instead of four manual commands) so trying
   this out has no setup friction, and a GitHub Actions workflow that runs
