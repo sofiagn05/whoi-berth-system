@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>WHOI Berth Reservation System</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<header>
+  <h1>WHOI Berth Reservation System</h1>
+  <p>Berths, vessels, community events, and automatic double-booking / fit checks.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Dock schedule grid</h2>
+    <p>The same berth &times; day grid staff used to check by eye for double-bookings &mdash;
+       except this one flags conflicts (in red) automatically. Click an empty cell to start a
+       booking there; click an occupied cell to inspect or delete it.</p>
+    <div class="row" style="max-width: 320px; align-items: end;">
+      <div>
+        <label>Year</label>
+        <input type="number" id="cal-year" value="1997" />
+      </div>
+      <div>
+        <label>Month</label>
+        <select id="cal-month"></select>
+      </div>
+    </div>
+    <div id="calendar-grid" style="overflow-x:auto; margin-top: 12px;"></div>
+    <div id="cell-detail"></div>
+  </section>
+
+  <section class="card" id="booking-form-card">
+    <h2>New booking</h2>
+    <form id="booking-form">
+      <div>
+        <label>Kind</label>
+        <select id="kind">
+          <option value="vessel">Vessel</option>
+          <option value="event">Non-vessel event (e.g. community sail day)</option>
+        </select>
+      </div>
+
+      <div id="vessel-field">
+        <label>Vessel</label>
+        <select id="vessel_id"></select>
+      </div>
+
+      <div id="event-field" style="display:none">
+        <label>Event name</label>
+        <input id="event_name" placeholder="Community Sail Day" />
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Start date</label>
+          <input type="date" id="start_date" />
+        </div>
+        <div>
+          <label>End date</label>
+          <input type="date" id="end_date" />
+        </div>
+      </div>
+
+      <div>
+        <label>Berth</label>
+        <select id="berth_id"></select>
+        <button type="button" class="secondary" id="suggest-btn" style="margin-top:6px">Suggest a berth for this vessel/dates</button>
+        <div id="suggest-inline-results"></div>
+      </div>
+
+      <div>
+        <button type="submit">Check &amp; Book</button>
+        <button type="button" class="secondary" id="force-btn" style="display:none">Book anyway (override warning)</button>
+      </div>
+      <div id="form-status"></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Audit: existing double-bookings &amp; fit violations</h2>
+    <p>Runs the double-booking and dimension-fit checks across <em>every</em> booking in the system —
+       the automated replacement for eyeballing the grid.</p>
+    <button id="run-audit">Run audit</button>
+    <div id="audit-summary"></div>
+    <div id="audit-results"></div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

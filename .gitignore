@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pyc
+berths.db
+.pytest_cache/
