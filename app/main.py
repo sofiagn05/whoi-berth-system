@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
+from app import analytics, crud, models, resolver, schemas
 from app.conflicts import date_ranges_overlap, check_fit
 from app.database import Base, SessionLocal, engine, get_db
 
@@ -223,6 +223,30 @@ def audit(db: Session = Depends(get_db)):
             "fit_warnings": len([f for f in fit_violations if f["severity"] == "warning"]),
         },
     }
+
+
+# ---------- Analytics: the dashboard's data source ----------
+
+@app.get("/analytics")
+def get_analytics(db: Session = Depends(get_db)):
+    return analytics.compute_analytics(db)
+
+
+# ---------- Batch conflict resolution ----------
+
+@app.get("/audit/resolve")
+def preview_resolution(db: Session = Depends(get_db)):
+    """Read-only: computes a reassignment plan for every conflict in the
+    system at once, without writing anything."""
+    return resolver.build_resolution_plan(db)
+
+
+@app.post("/audit/resolve/apply")
+def apply_resolution(moves: list[dict], db: Session = Depends(get_db)):
+    """Commits a plan's moves (as returned by GET /audit/resolve) by
+    updating each booking's berth_id."""
+    applied = resolver.apply_resolution_plan(db, moves)
+    return {"applied": applied}
 
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

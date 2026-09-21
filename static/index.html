@@ -13,6 +13,23 @@
 
 <main>
   <section class="card">
+    <h2>Dashboard</h2>
+    <p id="dashboard-window" class="muted-note"></p>
+    <div class="dash-grid">
+      <div>
+        <h3>Berth utilization</h3>
+        <div id="chart-utilization"></div>
+      </div>
+      <div>
+        <h3>Double-booked days per month</h3>
+        <div id="chart-conflicts"></div>
+      </div>
+    </div>
+    <h3>Busiest vessels (by days berthed)</h3>
+    <div id="top-vessels-table"></div>
+  </section>
+
+  <section class="card">
     <h2>Dock schedule grid</h2>
     <p>The same berth &times; day grid staff used to check by eye for double-bookings &mdash;
        except this one flags conflicts (in red) automatically. Click an empty cell to start a
@@ -85,6 +102,14 @@
     <button id="run-audit">Run audit</button>
     <div id="audit-summary"></div>
     <div id="audit-results"></div>
+
+    <h3 style="margin-top:20px">Resolve all conflicts at once</h3>
+    <p>Computes a single reassignment plan for <em>every</em> conflict in the system together
+       (optimal weighted interval scheduling per berth, then best-fit placement for whatever's
+       displaced) instead of fixing one booking at a time.</p>
+    <button id="compute-plan" class="secondary">Compute resolution plan</button>
+    <button id="apply-plan" style="display:none">Apply plan</button>
+    <div id="resolve-results"></div>
   </section>
 </main>
 

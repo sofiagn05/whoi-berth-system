@@ -55,6 +55,48 @@ expressed as a ranking heuristic rather than a hard rule.
 The audit endpoint also uses this to propose a fix for every conflict it
 finds, not just flag it.
 
+## Beyond checking: a dashboard and a global conflict resolver
+
+Two features go past "detect and flag" into "understand the pattern" and
+"fix everything at once":
+
+- **Dashboard** (`GET /analytics`, rendered on the homepage). Berth
+  utilization over the full booking history, double-booked days per month,
+  and the busiest vessels by days berthed. This is the question an audit
+  list can't answer on its own: not just *is there a conflict*, but *which
+  berths are actually under pressure*.
+
+- **Batch conflict resolution** (`GET /audit/resolve`, `POST
+  /audit/resolve/apply`). The single-booking suggestion endpoint answers
+  "where could this one reservation go." This answers a harder question:
+  given *every* conflict in the system at once, what's the best global
+  reassignment? It's a two-stage algorithm, not a loop over individual
+  fixes:
+
+  1. **Per berth, decide which of its (possibly mutually overlapping)
+     reservations to keep in place**, using weighted interval scheduling
+     (`app/resolver.py::weighted_interval_schedule_keep`) — the classic
+     Kleinberg–Tardos DP, which is *provably optimal* for a single
+     resource. Weight = reservation length in days, so a 15-day research
+     cruise is kept over a 1-day community sail day it conflicts with;
+     plain "maximize the count of bookings kept" would do the opposite,
+     since dropping the long booking frees more slots for short ones.
+  2. **Greedily reassign whatever got displaced** to the best available,
+     physically-fitting berth elsewhere, tracking a live occupancy
+     timeline so two displaced bookings can't collide with each other
+     either. A displaced vessel with unknown dimensions is not silently
+     reassigned — it's placed but flagged `needs_review`, since fit can't
+     be verified. Anything with no valid berth at all is reported as
+     unresolved, not guessed at.
+
+  The endpoint is a preview by default; nothing is written to the database
+  until the plan is explicitly applied.
+
+  The 1997 sample data happens to be conflict-free, so there's nothing for
+  the resolver to visibly do against it — run `python -m app.seed` instead
+  (on a fresh `berths.db`) to see it resolve an actual double-booking
+  end-to-end, including the weight-preference behavior described above.
+
 ## A note on the real data
 
 The attached sample (`data/dock_schedule_1997.csv`) is the literal grid:

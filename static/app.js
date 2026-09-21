@@ -225,5 +225,88 @@ document.getElementById("run-audit").addEventListener("click", async () => {
   document.getElementById("audit-results").innerHTML = dbHtml + fitHtml || `<div class="issue ok">No issues found.</div>`;
 });
 
+// ---------- Dashboard: utilization + conflict-frequency charts ----------
+
+function renderBarChart(el, rows, { critical = false, unit = "" } = {}) {
+  if (rows.length === 0) {
+    el.innerHTML = `<div class="viz-empty">No data yet.</div>`;
+    return;
+  }
+  const max = Math.max(...rows.map(r => r.value), 1);
+  const trackCls = critical ? "viz-bar-track track-critical" : "viz-bar-track";
+  const fillCls = critical ? "viz-bar-fill fill-critical" : "viz-bar-fill";
+  el.innerHTML = `<div class="viz-root">` + rows.map(r => `
+    <div class="viz-bar-row" title="${r.label}: ${r.value}${unit}">
+      <div class="viz-bar-label">${r.label}</div>
+      <div class="${trackCls}"><div class="${fillCls}" style="width:${Math.max(2, 100 * r.value / max)}%"></div></div>
+      <div class="viz-bar-value">${r.value}${unit}</div>
+    </div>`).join("") + `</div>`;
+}
+
+async function loadDashboard() {
+  const data = await api("/analytics");
+  const windowEl = document.getElementById("dashboard-window");
+  windowEl.textContent = data.window
+    ? `Covering ${data.window.start} to ${data.window.end} (${data.window.total_days} days) · ${data.summary.total_bookings} bookings · busiest berth: ${data.summary.busiest_berth} (${data.summary.busiest_berth_pct}% occupied)`
+    : "No bookings yet.";
+
+  renderBarChart(
+    document.getElementById("chart-utilization"),
+    data.utilization.map(u => ({ label: u.berth_code, value: u.utilization_pct })),
+    { unit: "%" }
+  );
+
+  renderBarChart(
+    document.getElementById("chart-conflicts"),
+    data.conflicts_by_month.map(c => ({ label: c.month, value: c.conflict_days })),
+    { critical: true, unit: " day" + (data.conflicts_by_month.length === 1 ? "" : "s") }
+  );
+
+  const vesselRows = data.top_vessels.map(v => `
+    <tr><td>${v.name}</td><td class="num">${v.booking_count}</td><td class="num">${v.total_days}</td></tr>`).join("");
+  document.getElementById("top-vessels-table").innerHTML = data.top_vessels.length === 0
+    ? `<div class="viz-empty">No vessel bookings yet.</div>`
+    : `<table class="simple-table">
+        <thead><tr><th>Vessel</th><th class="num">Bookings</th><th class="num">Total days berthed</th></tr></thead>
+        <tbody>${vesselRows}</tbody>
+      </table>`;
+}
+
+// ---------- Batch conflict resolution ----------
+
+let currentPlan = null;
+
+document.getElementById("compute-plan").addEventListener("click", async () => {
+  const el = document.getElementById("resolve-results");
+  el.innerHTML = `<div class="viz-empty">Computing...</div>`;
+  currentPlan = await api("/audit/resolve");
+
+  const parts = [];
+  parts.push(`<div class="issue ok">Kept in place: ${currentPlan.kept_count}. Reassigned: ${currentPlan.moves.length}. Unresolved: ${currentPlan.unresolved.length}.</div>`);
+  for (const m of currentPlan.moves) {
+    parts.push(`<div class="plan-move ${m.needs_review ? 'needs-review' : ''}">
+      Move booking #${m.booking_id} (<strong>${m.occupant}</strong>, ${m.dates.join(" to ")}) from ${m.from_berth} &rarr; ${m.to_berth}
+      ${m.needs_review ? "<br><em>Vessel dimensions unknown -- verify fit manually before confirming.</em>" : ""}
+    </div>`);
+  }
+  for (const u of currentPlan.unresolved) {
+    parts.push(`<div class="issue error">Booking #${u.booking_id} (${u.occupant} @ ${u.berth}, ${u.dates.join(" to ")}): ${u.reason}</div>`);
+  }
+  el.innerHTML = parts.join("");
+  document.getElementById("apply-plan").style.display = currentPlan.moves.length > 0 ? "" : "none";
+});
+
+document.getElementById("apply-plan").addEventListener("click", async () => {
+  if (!currentPlan || currentPlan.moves.length === 0) return;
+  const result = await api("/audit/resolve/apply", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(currentPlan.moves),
+  });
+  document.getElementById("resolve-results").innerHTML += `<div class="issue ok">Applied ${result.applied} reassignment(s).</div>`;
+  document.getElementById("apply-plan").style.display = "none";
+  currentPlan = null;
+  loadCalendar();
+  loadDashboard();
+});
+
 initCalendarControls();
-loadReference().then(loadCalendar);
+loadReference().then(loadCalendar).then(loadDashboard);

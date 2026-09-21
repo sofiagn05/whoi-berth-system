@@ -82,6 +82,18 @@ def create_booking(db: Session, booking_in) -> models.Booking:
     return booking
 
 
+def score_berth_for_vessel(berth: models.Berth, vessel: models.Vessel) -> float:
+    """Lower is better. Prefers an efficient (not wastefully oversized) fit,
+    nudged toward channel-adjacent berths for deep-draft vessels and toward
+    T-head berths for guest/novice crews (easier in/out)."""
+    score = berth.length_ft - (vessel.loa_ft or 0)  # smaller slack = more efficient
+    if (vessel.draft_ft or 0) >= 6 and berth.location == models.BerthLocation.CHANNEL_ADJACENT:
+        score -= 100
+    if (vessel.is_guest or vessel.novice_crew) and berth.location == models.BerthLocation.T_HEAD:
+        score -= 50
+    return score
+
+
 def suggest_berths(db: Session, vessel: models.Vessel, start_date, end_date, limit: int = 5):
     """Rank available, physically-fitting berths for a vessel over a date range.
 
@@ -110,13 +122,7 @@ def suggest_berths(db: Session, vessel: models.Vessel, start_date, end_date, lim
         if any(i.severity == "error" for i in issues):
             continue
 
-        score = berth.length_ft - vessel.loa_ft  # smaller slack = more efficient
-        if (vessel.draft_ft or 0) >= 6 and berth.location == models.BerthLocation.CHANNEL_ADJACENT:
-            score -= 100
-        if (vessel.is_guest or vessel.novice_crew) and berth.location == models.BerthLocation.T_HEAD:
-            score -= 50
-
-        candidates.append((score, berth, issues))
+        candidates.append((score_berth_for_vessel(berth, vessel), berth, issues))
 
     candidates.sort(key=lambda c: c[0])
     return [(berth, issues) for _, berth, issues in candidates[:limit]]
