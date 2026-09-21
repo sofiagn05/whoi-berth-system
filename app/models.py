@@ -23,7 +23,7 @@ class Berth(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String, unique=True, index=True, nullable=False)
-    length_ft = Column(Float, nullable=False)
+    length_ft = Column(Float, nullable=True)  # unknown for berths recovered from an unlabeled source row
     max_beam_ft = Column(Float, nullable=True)
     max_draft_ft = Column(Float, nullable=True)
     location = Column(Enum(BerthLocation), default=BerthLocation.ALONGSIDE, nullable=False)

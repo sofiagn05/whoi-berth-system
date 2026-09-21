@@ -13,6 +13,19 @@
 
 <main>
   <section class="card">
+    <h2>Search history</h2>
+    <p class="muted-note">Find a vessel or event by name across every year of bookings, without paging
+       through the calendar month by month.</p>
+    <div class="row" style="max-width: 480px; align-items: end;">
+      <div style="grid-column: span 2;">
+        <label>Vessel or event name</label>
+        <input id="search-q" placeholder="e.g. FAR HORIZON" />
+      </div>
+    </div>
+    <div id="search-results" style="margin-top: 10px"></div>
+  </section>
+
+  <section class="card">
     <h2>Dashboard</h2>
     <p id="dashboard-window" class="muted-note"></p>
     <div class="dash-grid">
@@ -93,6 +106,17 @@
       </div>
       <div id="form-status"></div>
     </form>
+  </section>
+
+  <section class="card">
+    <h2>Vessel dimensions</h2>
+    <p>The imported schedule has vessel <em>names</em> but not LOA/beam/draft, so most fit checks
+       currently show as "unknown" rather than pass/fail. Upload a CSV (columns: <code>name,
+       loa_ft, beam_ft, draft_ft, vessel_type</code>) to fill in dimensions for vessels that already
+       exist &mdash; this won't create new vessels, only update matching names.</p>
+    <input type="file" id="vessel-csv-input" accept=".csv" />
+    <button id="upload-vessel-csv" class="secondary" style="margin-top:8px">Upload</button>
+    <div id="vessel-upload-results" style="margin-top:10px"></div>
   </section>
 
   <section class="card">

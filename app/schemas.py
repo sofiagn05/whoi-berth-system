@@ -8,15 +8,21 @@ from app.models import BerthLocation, BookingKind
 
 class BerthCreate(BaseModel):
     code: str
-    length_ft: float
+    length_ft: float  # required when creating a berth by hand via the API
     max_beam_ft: Optional[float] = None
     max_draft_ft: Optional[float] = None
     location: BerthLocation = BerthLocation.ALONGSIDE
     notes: Optional[str] = None
 
 
-class BerthOut(BerthCreate):
+class BerthOut(BaseModel):
     id: int
+    code: str
+    length_ft: Optional[float]  # None for a berth recovered from an unlabeled source row
+    max_beam_ft: Optional[float] = None
+    max_draft_ft: Optional[float] = None
+    location: BerthLocation = BerthLocation.ALONGSIDE
+    notes: Optional[str] = None
 
     class Config:
         from_attributes = True

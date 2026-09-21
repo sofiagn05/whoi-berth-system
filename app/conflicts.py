@@ -31,7 +31,7 @@ def iter_days(start: date, end: date) -> Iterator[date]:
 
 
 def check_fit(
-    berth_length_ft: float,
+    berth_length_ft: Optional[float],
     vessel_loa_ft: Optional[float],
     berth_max_beam_ft: Optional[float] = None,
     vessel_beam_ft: Optional[float] = None,
@@ -43,11 +43,16 @@ def check_fit(
     Returns a list of issues: "error" means the vessel physically does not
     fit (hard block), "warning" means it fits but violates the recommended
     10% length-margin rule of thumb, or that a dimension needed to verify
-    fit is missing from the vessel record.
+    fit is missing from either record (berth or vessel).
     """
     issues: list[DimensionIssue] = []
 
-    if vessel_loa_ft is None:
+    if berth_length_ft is None:
+        issues.append(DimensionIssue(
+            "warning",
+            "Berth length is unknown; cannot verify a vessel fits it.",
+        ))
+    elif vessel_loa_ft is None:
         issues.append(DimensionIssue(
             "warning",
             "Vessel LOA is unknown; cannot verify it fits this berth.",

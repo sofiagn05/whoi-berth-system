@@ -102,6 +102,8 @@ def build_resolution_plan(db: Session) -> dict:
         for berth in berths:
             if berth.id == booking.berth_id:
                 continue
+            if berth.length_ft is None:
+                continue  # can't verify fit or score a berth of unknown length as a target
             if any(date_ranges_overlap(booking.start_date, booking.end_date, s, e)
                    for s, e in occupancy[berth.id]):
                 continue

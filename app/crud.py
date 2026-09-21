@@ -114,6 +114,8 @@ def suggest_berths(db: Session, vessel: models.Vessel, start_date, end_date, lim
 
     candidates = []
     for berth in db.query(models.Berth).all():
+        if berth.length_ft is None:
+            continue  # can't verify fit or score a berth of unknown length
         if find_double_bookings(db, berth.id, start_date, end_date):
             continue
         issues = fit_issues(berth, vessel)

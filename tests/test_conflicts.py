@@ -43,3 +43,10 @@ def test_fit_error_on_beam_and_draft():
     messages = [i.message for i in issues]
     assert any("beam" in m for m in messages)
     assert any("draft" in m for m in messages)
+
+
+def test_fit_warning_when_berth_length_unknown():
+    issues = check_fit(berth_length_ft=None, vessel_loa_ft=30)
+    assert len(issues) == 1
+    assert issues[0].severity == "warning"
+    assert "berth length" in issues[0].message.lower()

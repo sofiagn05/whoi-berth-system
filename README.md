@@ -30,6 +30,12 @@ python -m app.import_schedule data/dock_schedule_1997.csv   # or: python -m app.
 uvicorn app.main:app --reload --port 8420
 ```
 
+Once it's running, upload `data/vessel_dimensions_sample.csv` under "Vessel
+dimensions" on the homepage (or `curl -F file=@data/vessel_dimensions_sample.csv
+localhost:8420/vessels/import`) to see fit-checking go from "unknown" to
+active for the real 1997 vessels — see **Closing the vessel-dimensions gap**,
+below.
+
 ## What it actually checks
 
 Two things, both named directly in the original problem:
@@ -127,9 +133,44 @@ Two things worth flagging about this data:
   from the schedule with dimensions left unset, and the fit-checker treats
   "unknown" as its own explicit state (a warning, not a silent pass).
   Fit-checking becomes fully active for a vessel as soon as its dimensions
-  are filled in — a one-time backfill for the resident fleet would make it
-  useful immediately; guest/transient boats can be filled in as they're
-  logged going forward.
+  are filled in — see **Closing the vessel-dimensions gap**, below.
+- **One row has no berth label at all.** Below "South Float East" in
+  August, a row holding "R/V Amber Tide" has a blank first column — a
+  berth whose name and length were simply left blank in the source
+  spreadsheet. The first version of this importer treated any blank-label
+  row as the end of the month's block and silently dropped it — which is
+  worse than the month-layout bug above, since it loses a real
+  reservation rather than just misplacing one. It's now kept under an
+  explicit `Unidentified (unlabeled row in source schedule)` pseudo-berth
+  with an unknown length (`app/import_schedule.py` flags this with a
+  count on every import run), rather than invented or discarded. It shows
+  up in the calendar and audit like any other berth, but is excluded from
+  `/bookings/suggest` and the batch resolver as a *destination*, since
+  fit can't be verified for a berth of unknown length — the same
+  unknown-is-explicit treatment already used for missing vessel
+  dimensions, applied to the berth side too.
+
+## Closing the vessel-dimensions gap
+
+Since the schedule doesn't carry LOA/beam/draft, `POST /vessels/import`
+takes a CSV (`name, loa_ft, beam_ft, draft_ft, vessel_type`) and fills in
+dimensions for vessels that already exist, matching by name — it updates,
+never creates, so a typo'd name in the CSV surfaces as "not found" instead
+of silently spawning a duplicate vessel. `data/vessel_dimensions_sample.csv`
+has plausible dimensions for all 15 vessels in the 1997 sample. Uploading it
+(via the UI or `curl -F file=@data/vessel_dimensions_sample.csv
+localhost:8420/vessels/import`) drops the audit's fit warnings from 31 to 1
+— the one that's left is the Amber Tide booking on the unlabeled berth
+above, correctly still unverifiable since it's the *berth's* length that's
+missing this time, not the vessel's.
+
+## Searching the history
+
+`GET /bookings/search?q=<text>` finds bookings by vessel or event name
+(substring, case-insensitive) across every year loaded, and returns which
+berth and month each match is in. Browsing 23 years of history one month at
+a time doesn't scale for "when did this vessel last berth here" — the UI's
+search box jumps straight to the matching month in the calendar grid.
 
 ## Data model
 

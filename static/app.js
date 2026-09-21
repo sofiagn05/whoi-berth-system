@@ -8,10 +8,12 @@ let berths = [];
 let vessels = [];
 let pendingForceBooking = null;
 
+const fmtLen = (ft) => ft != null ? `${ft}ft` : "length unknown";
+
 async function loadReference() {
   [berths, vessels] = await Promise.all([api("/berths"), api("/vessels")]);
   document.getElementById("berth_id").innerHTML =
-    berths.map(b => `<option value="${b.id}">${b.code} (${b.length_ft}ft, ${b.location})</option>`).join("");
+    berths.map(b => `<option value="${b.id}">${b.code} (${fmtLen(b.length_ft)}, ${b.location})</option>`).join("");
   document.getElementById("vessel_id").innerHTML =
     vessels.map(v => `<option value="${v.id}">${v.name} (LOA ${v.loa_ft != null ? v.loa_ft + "ft" : "unknown"})</option>`).join("");
 }
@@ -96,7 +98,7 @@ document.getElementById("suggest-btn").addEventListener("click", async () => {
     }
     el.innerHTML = results.map(r => `
       <div class="issue ${r.warnings.length ? 'warning' : 'ok'}" data-pick="${r.berth.id}" style="cursor:pointer">
-        <strong>${r.berth.code}</strong> — ${r.berth.length_ft}ft, ${r.berth.location}
+        <strong>${r.berth.code}</strong> — ${fmtLen(r.berth.length_ft)}, ${r.berth.location}
         ${r.warnings.length ? "<br>" + r.warnings.map(w => w.message).join("<br>") : " — good fit"}
         <br><em>click to select</em>
       </div>`).join("");
@@ -175,7 +177,7 @@ async function loadCalendar() {
       return `<td class="cal-cell ${cls}" title="${title.replace(/"/g, "'")}"
                   data-berth="${row.berth_id}" data-date="${dateStr}" data-occupants='${JSON.stringify(dayInfo.occupants)}'>${label}</td>`;
     }).join("");
-    return `<tr><td class="berth-label">${row.berth_code} (${row.berth_length_ft}ft)</td>${cells}</tr>`;
+    return `<tr><td class="berth-label">${row.berth_code} (${fmtLen(row.berth_length_ft)})</td>${cells}</tr>`;
   }).join("");
 
   el.innerHTML = `
@@ -306,6 +308,73 @@ document.getElementById("apply-plan").addEventListener("click", async () => {
   currentPlan = null;
   loadCalendar();
   loadDashboard();
+});
+
+// ---------- Search history ----------
+
+function jumpToBooking(year, month) {
+  document.getElementById("cal-year").value = year;
+  document.getElementById("cal-month").value = month;
+  loadCalendar();
+  document.getElementById("calendar-grid").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+let searchDebounce = null;
+document.getElementById("search-q").addEventListener("input", (e) => {
+  clearTimeout(searchDebounce);
+  const q = e.target.value;
+  const el = document.getElementById("search-results");
+  if (q.trim().length < 2) {
+    el.innerHTML = "";
+    return;
+  }
+  searchDebounce = setTimeout(async () => {
+    const results = await api(`/bookings/search?q=${encodeURIComponent(q)}`);
+    if (results.length === 0) {
+      el.innerHTML = `<div class="viz-empty">No matches.</div>`;
+      return;
+    }
+    el.innerHTML = `<table class="simple-table">
+      <thead><tr><th>Occupant</th><th>Type</th><th>Berth</th><th>Dates</th><th></th></tr></thead>
+      <tbody>${results.map(r => `
+        <tr>
+          <td>${r.occupant}</td>
+          <td><span class="badge ${r.kind}">${r.kind}</span></td>
+          <td>${r.berth_code ?? "—"}</td>
+          <td>${r.start_date} to ${r.end_date}</td>
+          <td><button class="secondary" data-jump="${r.year}:${r.month}">View</button></td>
+        </tr>`).join("")}</tbody>
+    </table>`;
+    el.querySelectorAll("[data-jump]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const [year, month] = btn.dataset.jump.split(":").map(Number);
+        jumpToBooking(year, month);
+      });
+    });
+  }, 250);
+});
+
+// ---------- Vessel dimensions bulk upload ----------
+
+document.getElementById("upload-vessel-csv").addEventListener("click", async () => {
+  const input = document.getElementById("vessel-csv-input");
+  const el = document.getElementById("vessel-upload-results");
+  if (!input.files.length) {
+    el.innerHTML = `<div class="issue warning">Choose a CSV file first.</div>`;
+    return;
+  }
+  const formData = new FormData();
+  formData.append("file", input.files[0]);
+  try {
+    const result = await api("/vessels/import", { method: "POST", body: formData });
+    el.innerHTML = `
+      <div class="issue ok">Updated ${result.updated.length} vessel(s): ${result.updated.join(", ") || "none"}.</div>
+      ${result.not_found.length ? `<div class="issue warning">No matching vessel found for: ${result.not_found.join(", ")}.</div>` : ""}
+    `;
+    await loadReference();
+  } catch (err) {
+    el.innerHTML = `<div class="issue error">${err.body?.detail ?? "Upload failed."}</div>`;
+  }
 });
 
 initCalendarControls();

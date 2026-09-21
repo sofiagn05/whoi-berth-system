@@ -24,6 +24,7 @@ import sys
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Optional
 
 from app.database import Base, SessionLocal, engine
 from app.models import Berth, Booking, BookingKind, Vessel
@@ -32,6 +33,7 @@ MONTHS = {
     "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
     "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12,
 }
+UNLABELED_BERTH_CODE = "Unidentified (unlabeled row in source schedule)"
 MONTH_HEADER_RE = re.compile(r"^([A-Z]+)\s+(\d{4})$")
 BERTH_LABEL_RE = re.compile(r"^(.+?)\s*-\s*(\d+)\s*'?\s*$")
 VESSEL_PREFIX_RE = re.compile(r"^(S/V|F/V|M/V|R/V|USCGC|Tug|Barge)\s+(.+)$", re.IGNORECASE)
@@ -48,7 +50,7 @@ PREFIX_TYPES = {
 @dataclass
 class RawEntry:
     berth_code: str
-    berth_length_ft: int
+    berth_length_ft: Optional[int]
     day: date
     occupant_text: str
 
@@ -110,17 +112,31 @@ def parse_grid_csv(path: Path) -> list[RawEntry]:
         while i < n:
             row = rows[i]
             label = (row[0] if row else "").strip()
-            if not label:
+            data_cells = row[1:] if row else []
+            has_data = any(c.strip() for c in data_cells)
+
+            if not label and not has_data:
                 i += 1
-                break
+                break  # genuinely blank separator row -- end of this month's block
+
             if MONTH_HEADER_RE.match(label):
-                break
-            bm = BERTH_LABEL_RE.match(label)
-            if not bm:
-                i += 1
-                continue
-            berth_code, berth_len = bm.group(1).strip(), int(bm.group(2))
-            for col_idx, cell in enumerate(row[1:]):
+                break  # next month header; don't consume it here
+
+            if label:
+                bm = BERTH_LABEL_RE.match(label)
+                if not bm:
+                    i += 1
+                    continue
+                berth_code, berth_len = bm.group(1).strip(), int(bm.group(2))
+            else:
+                # A row with reservation data but no berth label at all: a
+                # gap in the source spreadsheet itself (a berth whose name
+                # and length were left blank), not a parsing edge case.
+                # Surfacing it as its own explicitly-unidentified berth beats
+                # silently discarding a real historical reservation.
+                berth_code, berth_len = UNLABELED_BERTH_CODE, None
+
+            for col_idx, cell in enumerate(data_cells):
                 cell = cell.strip()
                 if not cell or col_idx >= len(day_numbers) or day_numbers[col_idx] is None:
                     continue
@@ -173,12 +189,17 @@ def import_files(paths: list[Path], db=None):
         (b.berth_id, b.vessel_id, b.event_name, b.start_date, b.end_date) for b in db.query(Booking).all()
     }
 
-    stats = {"files": 0, "berths_created": 0, "vessels_created": 0, "bookings_created": 0, "bookings_skipped_dupe": 0}
+    stats = {
+        "files": 0, "berths_created": 0, "vessels_created": 0, "bookings_created": 0,
+        "bookings_skipped_dupe": 0, "unlabeled_berth_bookings": 0,
+    }
 
     for path in paths:
         stats["files"] += 1
         entries = parse_grid_csv(path)
         for berth_code, berth_len, start, end, text in coalesce_bookings(entries):
+            if berth_code == UNLABELED_BERTH_CODE:
+                stats["unlabeled_berth_bookings"] += 1
             berth = berth_cache.get(berth_code)
             if berth is None:
                 berth = Berth(code=berth_code, length_ft=berth_len)
@@ -233,3 +254,11 @@ if __name__ == "__main__":
 
     stats = import_files(args.csv_files)
     print(stats)
+    if stats["unlabeled_berth_bookings"]:
+        print(
+            f"\nNote: {stats['unlabeled_berth_bookings']} booking(s) came from a row in the "
+            f"source spreadsheet with no berth name/length filled in. These were kept under "
+            f"'{UNLABELED_BERTH_CODE}' rather than dropped -- reconcile them against the "
+            f"original schedule and reassign to the correct berth via the API/UI.",
+            file=sys.stderr,
+        )

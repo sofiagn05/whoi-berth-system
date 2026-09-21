@@ -1,7 +1,9 @@
 import calendar as calendar_module
+import csv
+import io
 from datetime import date as date_cls
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -47,11 +49,81 @@ def list_vessels(db: Session = Depends(get_db)):
     return db.query(models.Vessel).all()
 
 
+@app.post("/vessels/import")
+async def import_vessel_dimensions(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Bulk-fill LOA/beam/draft for existing vessels from a CSV
+    (columns: name, loa_ft, beam_ft, draft_ft, vessel_type -- only name is
+    required, the rest fill in whatever's present). Matches by name,
+    case-insensitively; does not create new vessels, since a name typo in
+    the CSV would otherwise silently create a duplicate instead of updating
+    the real one.
+    """
+    raw = (await file.read()).decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(raw))
+    vessels_by_name = {v.name.lower(): v for v in db.query(models.Vessel).all()}
+
+    updated, not_found = [], []
+    for row in reader:
+        name = (row.get("name") or "").strip()
+        if not name:
+            continue
+        vessel = vessels_by_name.get(name.lower())
+        if vessel is None:
+            not_found.append(name)
+            continue
+        for field in ("loa_ft", "beam_ft", "draft_ft"):
+            value = (row.get(field) or "").strip()
+            if value:
+                setattr(vessel, field, float(value))
+        vessel_type = (row.get("vessel_type") or "").strip()
+        if vessel_type:
+            vessel.vessel_type = vessel_type
+        updated.append(vessel.name)
+
+    db.commit()
+    return {"updated": updated, "not_found": not_found}
+
+
 # ---------- Bookings ----------
 
 @app.get("/bookings", response_model=list[schemas.BookingOut])
 def list_bookings(db: Session = Depends(get_db)):
     return db.query(models.Booking).all()
+
+
+@app.get("/bookings/search")
+def search_bookings(q: str, db: Session = Depends(get_db)):
+    """Find bookings by vessel or event name -- a substring, case-insensitive
+    match. With years of history, browsing month by month to find "when did
+    this vessel last berth here" doesn't scale; this does the lookup
+    directly instead.
+    """
+    q = q.strip()
+    if not q:
+        return []
+
+    berths_by_id = {b.id: b for b in db.query(models.Berth).all()}
+    vessels_by_id = {v.id: v for v in db.query(models.Vessel).all()}
+    needle = q.lower()
+
+    results = []
+    for b in db.query(models.Booking).all():
+        name = vessels_by_id[b.vessel_id].name if b.kind == models.BookingKind.VESSEL and b.vessel_id in vessels_by_id else b.event_name
+        if name and needle in name.lower():
+            berth = berths_by_id.get(b.berth_id)
+            results.append({
+                "booking_id": b.id,
+                "occupant": name,
+                "kind": b.kind,
+                "berth_code": berth.code if berth else None,
+                "start_date": str(b.start_date),
+                "end_date": str(b.end_date),
+                "year": b.start_date.year,
+                "month": b.start_date.month,
+            })
+
+    results.sort(key=lambda r: r["start_date"])
+    return results
 
 
 @app.post("/bookings", response_model=schemas.BookingOut)
