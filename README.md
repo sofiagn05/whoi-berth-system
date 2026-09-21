@@ -1,5 +1,7 @@
 # WHOI Berth Reservation System
 
+[![tests](https://github.com/sofiagn05/whoi-berth-system/actions/workflows/test.yml/badge.svg)](https://github.com/sofiagn05/whoi-berth-system/actions/workflows/test.yml)
+
 A replacement for the spreadsheet grid used to track berth reservations by hand.
 Given a berth (of a known length) and a date range, the system tells you
 immediately whether a reservation is safe to make — no more eyeballing a
@@ -8,21 +10,25 @@ grid for overlaps or guessing whether a boat will actually fit.
 ## Quickstart
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+make import   # sets up a venv and loads the real 1997 dock schedule sample
+make run      # serves the app at http://localhost:8420
 
-# Load the real 1997 dock schedule sample (data/dock_schedule_1997.csv)
-python -m app.import_schedule data/dock_schedule_1997.csv
+# or, instead of `make import`, load synthetic demo data with intentional
+# conflicts baked in -- useful for seeing the resolver actually do something,
+# since the real 1997 sample happens to be conflict-free:
+# make seed
 
-# or, instead, load synthetic demo data with intentional conflicts baked in:
-# python -m app.seed
-
-uvicorn app.main:app --reload --port 8420
+make test     # runs the test suite (also runs automatically on every push, see badge above)
 ```
 
-Then open `http://localhost:8420`.
+No `make`? The equivalent by hand:
 
-Run the test suite with `pytest`.
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m app.import_schedule data/dock_schedule_1997.csv   # or: python -m app.seed
+uvicorn app.main:app --reload --port 8420
+```
 
 ## What it actually checks
 
@@ -144,3 +150,32 @@ dimensions would need the rest of the workbook's tabs — the importer is
 written to take a list of yearly CSV exports (`python -m app.import_schedule
 year1.csv year2.csv ...`) and is idempotent (safe to re-run), so that's a
 data problem, not a code problem, once the rest of the tabs are exported.
+
+## A waste pass, after the features landed
+
+Once the checking, dashboard, and resolver were working, I went back through
+looking for what shouldn't have been there in the first place, what could be
+deleted, and what was duplicated — before adding any more polish:
+
+- **Two unused imports removed** (`sqlalchemy.and_` in `crud.py`, `SessionLocal`
+  in `main.py`) — left over from earlier drafts, never actually called.
+- **The same `check_fit(...)` six-argument call was duplicated at four call
+  sites** (`crud.py` x2, `main.py`, `resolver.py`), each manually unpacking
+  `berth.length_ft`, `vessel.loa_ft`, etc. Collapsed into one adapter,
+  `crud.fit_issues(berth, vessel)`, used everywhere fit needs checking.
+- **Day-by-day date iteration was duplicated** between the calendar endpoint
+  and the analytics module. Both now share `conflicts.iter_days(start, end)`.
+- **Two heuristics can't currently fire against the real data**: the
+  channel-adjacent nudge for deep-draft vessels and the T-head nudge for
+  guest/novice crews (`crud.score_berth_for_vessel`) both depend on vessel
+  attributes the 1997 schedule doesn't carry (draft, guest/novice status),
+  so they're currently dead weight against real data specifically -- they
+  were named directly in the brief, so I kept them rather than cut them,
+  but they only start doing anything once that data is entered for real
+  vessels. Worth knowing rather than assuming they're already active.
+- **Two additions were about the *process*, not the app**: a `Makefile`
+  (`make import && make run` instead of four manual commands) so trying
+  this out has no setup friction, and a GitHub Actions workflow that runs
+  the test suite on every push, so "tests pass" isn't something that only
+  happens when someone remembers to run `pytest` locally (see the badge at
+  the top of this file).

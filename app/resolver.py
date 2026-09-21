@@ -30,7 +30,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app import crud, models
-from app.conflicts import check_fit, date_ranges_overlap
+from app.conflicts import date_ranges_overlap
 
 
 def weighted_interval_schedule_keep(bookings: list):
@@ -114,12 +114,7 @@ def build_resolution_plan(db: Session) -> dict:
                     needs_review = True
                     score = berth.length_ft
                 else:
-                    issues = check_fit(
-                        berth_length_ft=berth.length_ft, vessel_loa_ft=vessel.loa_ft,
-                        berth_max_beam_ft=berth.max_beam_ft, vessel_beam_ft=vessel.beam_ft,
-                        berth_max_draft_ft=berth.max_draft_ft, vessel_draft_ft=vessel.draft_ft,
-                    )
-                    if any(i.severity == "error" for i in issues):
+                    if any(i.severity == "error" for i in crud.fit_issues(berth, vessel)):
                         continue
                     score = crud.score_berth_for_vessel(berth, vessel)
             else:

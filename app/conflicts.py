@@ -5,8 +5,8 @@ and reused by both the live API and the historical-data audit script.
 """
 
 from dataclasses import dataclass
-from datetime import date
-from typing import Optional
+from datetime import date, timedelta
+from typing import Iterator, Optional
 
 RECOMMENDED_LENGTH_MARGIN = 0.10  # rule of thumb: berth should be >=10% longer than LOA
 
@@ -20,6 +20,14 @@ class DimensionIssue:
 def date_ranges_overlap(start_a: date, end_a: date, start_b: date, end_b: date) -> bool:
     """Inclusive-range overlap check: True if [start_a, end_a] and [start_b, end_b] share a day."""
     return start_a <= end_b and start_b <= end_a
+
+
+def iter_days(start: date, end: date) -> Iterator[date]:
+    """Every calendar day in the inclusive range [start, end]."""
+    d = start
+    while d <= end:
+        yield d
+        d += timedelta(days=1)
 
 
 def check_fit(

@@ -1,4 +1,3 @@
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app import models
@@ -9,6 +8,19 @@ class BookingRejectedError(Exception):
     def __init__(self, issues: list[DimensionIssue]):
         self.issues = issues
         super().__init__("; ".join(i.message for i in issues))
+
+
+def fit_issues(berth: models.Berth, vessel: models.Vessel) -> list[DimensionIssue]:
+    """Adapter over the pure conflicts.check_fit: unpacks the berth/vessel
+    ORM objects once so callers don't each repeat the same six keyword args."""
+    return check_fit(
+        berth_length_ft=berth.length_ft,
+        vessel_loa_ft=vessel.loa_ft,
+        berth_max_beam_ft=berth.max_beam_ft,
+        vessel_beam_ft=vessel.beam_ft,
+        berth_max_draft_ft=berth.max_draft_ft,
+        vessel_draft_ft=vessel.draft_ft,
+    )
 
 
 def find_double_bookings(db: Session, berth_id: int, start_date, end_date, exclude_booking_id=None):
@@ -45,14 +57,7 @@ def evaluate_booking(db: Session, booking_in, exclude_booking_id=None) -> list[D
         vessel = db.query(models.Vessel).get(booking_in.vessel_id)
         if vessel is None:
             raise ValueError(f"No such vessel id {booking_in.vessel_id}")
-        issues.extend(check_fit(
-            berth_length_ft=berth.length_ft,
-            vessel_loa_ft=vessel.loa_ft,
-            berth_max_beam_ft=berth.max_beam_ft,
-            vessel_beam_ft=vessel.beam_ft,
-            berth_max_draft_ft=berth.max_draft_ft,
-            vessel_draft_ft=vessel.draft_ft,
-        ))
+        issues.extend(fit_issues(berth, vessel))
 
     return issues
 
@@ -111,14 +116,7 @@ def suggest_berths(db: Session, vessel: models.Vessel, start_date, end_date, lim
     for berth in db.query(models.Berth).all():
         if find_double_bookings(db, berth.id, start_date, end_date):
             continue
-        issues = check_fit(
-            berth_length_ft=berth.length_ft,
-            vessel_loa_ft=vessel.loa_ft,
-            berth_max_beam_ft=berth.max_beam_ft,
-            vessel_beam_ft=vessel.beam_ft,
-            berth_max_draft_ft=berth.max_draft_ft,
-            vessel_draft_ft=vessel.draft_ft,
-        )
+        issues = fit_issues(berth, vessel)
         if any(i.severity == "error" for i in issues):
             continue
 

@@ -7,8 +7,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app import analytics, crud, models, resolver, schemas
-from app.conflicts import date_ranges_overlap, check_fit
-from app.database import Base, SessionLocal, engine, get_db
+from app.conflicts import date_ranges_overlap, iter_days
+from app.database import Base, engine, get_db
 
 Base.metadata.create_all(bind=engine)
 
@@ -122,14 +122,13 @@ def calendar_grid(year: int, month: int, db: Session = Depends(get_db)):
     cells: dict[int, dict[int, list]] = {b.id: {d: [] for d in range(1, days_in_month + 1)} for b in berths}
     for booking in bookings:
         occupant = vessel_names.get(booking.vessel_id) if booking.kind == models.BookingKind.VESSEL else booking.event_name
-        d = max(booking.start_date, month_start)
-        end = min(booking.end_date, month_end)
-        while d <= end:
-            if booking.berth_id in cells:
+        clipped_start = max(booking.start_date, month_start)
+        clipped_end = min(booking.end_date, month_end)
+        if booking.berth_id in cells:
+            for d in iter_days(clipped_start, clipped_end):
                 cells[booking.berth_id][d.day].append({
                     "booking_id": booking.id, "kind": booking.kind, "name": occupant,
                 })
-            d = date_cls.fromordinal(d.toordinal() + 1)
 
     rows = []
     for b in berths:
@@ -196,14 +195,7 @@ def audit(db: Session = Depends(get_db)):
         vessel = db.query(models.Vessel).get(b.vessel_id)
         if berth is None or vessel is None:
             continue
-        issues = check_fit(
-            berth_length_ft=berth.length_ft,
-            vessel_loa_ft=vessel.loa_ft,
-            berth_max_beam_ft=berth.max_beam_ft,
-            vessel_beam_ft=vessel.beam_ft,
-            berth_max_draft_ft=berth.max_draft_ft,
-            vessel_draft_ft=vessel.draft_ft,
-        )
+        issues = crud.fit_issues(berth, vessel)
         for issue in issues:
             fit_violations.append({
                 "booking_id": b.id,

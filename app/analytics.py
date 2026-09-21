@@ -3,11 +3,11 @@ conflict frequency over time, and busiest vessels. Powers the dashboard.
 """
 
 from collections import defaultdict
-from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
 from app import models
+from app.conflicts import iter_days
 
 
 def compute_analytics(db: Session) -> dict:
@@ -35,10 +35,8 @@ def compute_analytics(db: Session) -> dict:
         blist = by_berth.get(berth.id, [])
         day_counts = defaultdict(int)
         for b in blist:
-            d = b.start_date
-            while d <= b.end_date:
+            for d in iter_days(b.start_date, b.end_date):
                 day_counts[d] += 1
-                d += timedelta(days=1)
 
         occupied_days = len(day_counts)
         occupied_day_instances = sum(day_counts.values())
