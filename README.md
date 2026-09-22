@@ -7,6 +7,10 @@ Given a berth (of a known length) and a date range, the system tells you
 immediately whether a reservation is safe to make — no more eyeballing a
 grid for overlaps or guessing whether a boat will actually fit.
 
+See [SPEC.md](SPEC.md) for the problem statement, requirements and success
+criteria, constraints, assumptions, and — for every piece of logic below —
+exactly how it was validated, not just asserted to work.
+
 ## Why this matters to me
 
 WHOI's Schiller Center for Reef Solutions is racing to find and protect
