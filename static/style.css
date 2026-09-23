@@ -10,10 +10,13 @@
   --text-tertiary: #6e6e73;
   --blue: #0071e3;
   --teal: #0a84ff;
+  --cyan: #64d2ff;
   --green: #30d158;
   --red: #ff453a;
   --amber: #ff9f0a;
   --purple: #bf5af2;
+  --indigo: #5e5ce6;
+  --pink: #ff375f;
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 8px;
@@ -25,7 +28,12 @@
 body {
   font-family: var(--font);
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(0,113,227,0.16), transparent 60%),
+    radial-gradient(800px 480px at 92% 8%, rgba(191,90,242,0.12), transparent 55%),
+    radial-gradient(700px 520px at 50% 105%, rgba(10,132,255,0.10), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
@@ -66,7 +74,21 @@ main {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
 }
+.card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent, var(--blue));
+  opacity: 0.85;
+}
+.card.card-teal { --accent: var(--teal); }
+.card.card-purple { --accent: var(--purple); }
+.card.card-amber { --accent: var(--amber); }
+.card.card-pink { --accent: var(--pink); }
+.card.card-indigo { --accent: var(--indigo); }
+.card.card-green { --accent: var(--green); }
 .card h2 {
   margin: 0 0 4px;
   font-size: 17px;
@@ -96,12 +118,20 @@ code {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  position: relative;
+  overflow: hidden;
 }
-.stat-card .stat-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
-.stat-card .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
-.stat-card.stat-good .stat-value { color: var(--green); }
-.stat-card.stat-alert .stat-value { color: var(--red); }
-.stat-card .stat-sub { font-size: 11.5px; color: var(--text-tertiary); }
+.stat-card::after {
+  content: ""; position: absolute; width: 140px; height: 140px; border-radius: 50%;
+  top: -60px; right: -60px; background: var(--accent, var(--blue)); opacity: 0.14; filter: blur(6px);
+}
+.stat-card.stat-teal { --accent: var(--teal); }
+.stat-card.stat-purple { --accent: var(--purple); }
+.stat-card .stat-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; position: relative; }
+.stat-card .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent, var(--text)); position: relative; }
+.stat-card.stat-good { --accent: var(--green); }
+.stat-card.stat-alert { --accent: var(--red); }
+.stat-card .stat-sub { font-size: 11.5px; color: var(--text-tertiary); position: relative; }
 
 /* ---------- Forms ---------- */
 form { display: grid; gap: 14px; }
@@ -136,6 +166,12 @@ button:hover { opacity: 0.88; }
 button:active { transform: scale(0.98); }
 button.secondary { background: var(--surface-3); color: var(--text); }
 button.secondary:hover { background: #48484a; opacity: 1; }
+button.btn-teal { background: var(--teal); }
+button.btn-purple { background: var(--purple); }
+button.btn-indigo { background: var(--indigo); }
+button.btn-green { background: var(--green); color: #06280f; }
+button.btn-amber { background: var(--amber); color: #2b1600; }
+button.btn-pink { background: var(--pink); }
 
 /* ---------- Segmented control (Apple-style pill toggle) ---------- */
 .segmented {
@@ -190,9 +226,10 @@ button.secondary:hover { background: #48484a; opacity: 1; }
 .fab {
   position: fixed; right: 32px; bottom: 32px; z-index: 40;
   width: 56px; height: 56px; border-radius: 50%;
-  background: var(--blue); color: #fff; font-size: 26px; font-weight: 400;
+  background: linear-gradient(135deg, var(--teal), var(--blue) 55%, var(--indigo));
+  color: #fff; font-size: 26px; font-weight: 400;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 24px rgba(0,113,227,0.45);
+  box-shadow: 0 8px 24px rgba(94,92,230,0.45);
   padding: 0;
 }
 .fab:hover { opacity: 1; transform: scale(1.05); }

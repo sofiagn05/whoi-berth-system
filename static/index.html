@@ -13,7 +13,7 @@
 
 <main>
   <section class="stat-row">
-    <div class="stat-card" id="stat-occupancy-card">
+    <div class="stat-card stat-teal" id="stat-occupancy-card">
       <div class="stat-label">Occupancy Rate</div>
       <div class="stat-value" id="stat-occupancy">&ndash;</div>
       <div class="stat-sub">average across all berths</div>
@@ -23,14 +23,14 @@
       <div class="stat-value" id="stat-conflicts">&ndash;</div>
       <div class="stat-sub">double-booking pairs, full history</div>
     </div>
-    <div class="stat-card" id="stat-berths-card">
+    <div class="stat-card stat-purple" id="stat-berths-card">
       <div class="stat-label">Active Berths</div>
       <div class="stat-value" id="stat-berths">&ndash;</div>
       <div class="stat-sub">with at least one booking</div>
     </div>
   </section>
 
-  <section class="card">
+  <section class="card card-teal">
     <h2>Search history</h2>
     <p class="muted-note">Find a vessel or event by name across every year of bookings, without paging
        through the calendar month by month.</p>
@@ -60,7 +60,7 @@
     <div id="top-vessels-table"></div>
   </section>
 
-  <section class="card">
+  <section class="card card-purple">
     <h2>Dock schedule grid</h2>
     <p>The same berth &times; day grid staff used to check by eye for double-bookings &mdash;
        except this one flags conflicts automatically. Click an empty cell to start a
@@ -79,22 +79,22 @@
     <div id="cell-detail"></div>
   </section>
 
-  <section class="card">
+  <section class="card card-amber">
     <h2>Vessel dimensions</h2>
     <p>The imported schedule has vessel <em>names</em> but not LOA/beam/draft, so most fit checks
        currently show as "unknown" rather than pass/fail. Upload a CSV (columns: <code>name,
        loa_ft, beam_ft, draft_ft, vessel_type</code>) to fill in dimensions for vessels that already
        exist &mdash; this won't create new vessels, only update matching names.</p>
     <input type="file" id="vessel-csv-input" accept=".csv" />
-    <button id="upload-vessel-csv" class="secondary" style="margin-top:8px">Upload</button>
+    <button id="upload-vessel-csv" class="btn-green" style="margin-top:8px">Upload</button>
     <div id="vessel-upload-results" style="margin-top:10px"></div>
   </section>
 
-  <section class="card">
+  <section class="card card-pink">
     <h2>Audit: existing double-bookings &amp; fit violations</h2>
     <p>Runs the double-booking and dimension-fit checks across <em>every</em> booking in the system —
        the automated replacement for eyeballing the grid.</p>
-    <button id="run-audit">Run audit</button>
+    <button id="run-audit" class="btn-pink">Run audit</button>
     <div id="audit-summary"></div>
     <div id="audit-results"></div>
 
@@ -102,8 +102,8 @@
     <p>Computes a single reassignment plan for <em>every</em> conflict in the system together
        (optimal weighted interval scheduling per berth, then best-fit placement for whatever's
        displaced) instead of fixing one booking at a time.</p>
-    <button id="compute-plan" class="secondary">Compute resolution plan</button>
-    <button id="apply-plan" style="display:none">Apply plan</button>
+    <button id="compute-plan" class="btn-indigo">Compute resolution plan</button>
+    <button id="apply-plan" class="btn-green" style="display:none">Apply plan</button>
     <div id="resolve-results"></div>
   </section>
 </main>
@@ -165,7 +165,7 @@
       <div>
         <label>Berth</label>
         <select id="berth_id"></select>
-        <button type="button" class="secondary" id="suggest-btn" style="margin-top:8px">Suggest a berth for this vessel/dates</button>
+        <button type="button" class="btn-teal" id="suggest-btn" style="margin-top:8px">Suggest a berth for this vessel/dates</button>
         <div id="suggest-inline-results"></div>
       </div>
 
