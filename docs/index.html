@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project Overview — WHOI Berth Reservation System</title>
+<meta name="description" content="An automated reservation and verification system for WHOI's berths, built and validated against 23 years of real booking records.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0b3d5c;
+    --navy-deep: #082b41;
+    --ocean: #2a78d6;
+    --ink: #1a2733;
+    --ink-soft: #4a5a68;
+    --paper: #f7f5f0;
+    --card: #ffffff;
+    --line: #dfe2e0;
+    --given: #6c7a89;
+    --built: #1f7a3d;
+    --accent: #c96a2c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); font-family: "Source Sans 3", system-ui, sans-serif; color: var(--ink); }
+  h1, h2, h3 { font-family: "Fraunces", Georgia, serif; margin: 0; }
+  a { color: var(--ocean); text-decoration: none; }
+  p { margin: 0; }
+  .navlink { color: #cfe2f2; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.25); white-space: nowrap; }
+  .navlink:hover { background: rgba(255,255,255,0.08); }
+</style>
+</head>
+<body>
+
+<div style="width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column;">
+
+  <!-- HEADER -->
+  <div style="background: var(--navy-deep); padding: 64px 96px 32px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #9fc3e0;">Project Overview &nbsp;&middot;&nbsp; WHOI Berth Reservation System</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a class="navlink" href="#problems">Core Requirements</a>
+        <a class="navlink" href="#capabilities">Capabilities</a>
+        <a class="navlink" href="#priority">Priority Scheduling</a>
+        <a class="navlink" href="#findings">Data Findings</a>
+        <a class="navlink" href="#process">Process</a>
+      </div>
+    </div>
+    <h1 style="font-size: 42px; font-weight: 600; color: #ffffff; max-width: 920px; line-height: 1.18; margin-top: 12px;">An Automated Reservation and Verification System for WHOI's Berths</h1>
+    <p style="font-size: 17px; color: #c9dced; max-width: 840px; line-height: 1.55;">WHOI's dock schedule has been maintained as a spreadsheet grid, reviewed manually for two operational risks: berths double-booked for overlapping dates, and vessels assigned to slips they do not physically fit. This system replaces that manual review with automated checks, designed and validated against the facility's full 23-year booking history.</p>
+  </div>
+
+  <!-- STAT STRIP -->
+  <div style="background: var(--navy); display: grid; grid-template-columns: repeat(6, 1fr);">
+    <div style="padding: 22px 12px; text-align: center; border-right: 1px solid rgba(255,255,255,0.15);">
+      <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">23</div>
+      <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">years of records</div>
+    </div>
+    <div style="padding: 22px 12px; text-align: center; border-right: 1px solid rgba(255,255,255,0.15);">
+      <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">2,258</div>
+      <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">bookings processed</div>
+    </div>
+    <div style="padding: 22px 12px; text-align: center; border-right: 1px solid rgba(255,255,255,0.15);">
+      <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">484</div>
+      <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">vessels identified</div>
+    </div>
+    <div style="padding: 22px 12px; text-align: center; border-right: 1px solid rgba(255,255,255,0.15);">
+      <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">7</div>
+      <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">data defects resolved</div>
+    </div>
+    <div style="padding: 22px 12px; text-align: center; border-right: 1px solid rgba(255,255,255,0.15);">
+      <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">9</div>
+      <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">conflicts identified</div>
+    </div>
+    <div style="padding: 22px 12px; text-align: center;">
+      <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">21</div>
+      <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">automated tests</div>
+    </div>
+  </div>
+
+  <!-- STARTING CONDITIONS / APPROACH SUMMARY -->
+  <div style="padding: 56px 96px 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--given);"></div>
+        <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--given);">Starting Conditions</div>
+      </div>
+      <h2 style="font-size: 23px; font-weight: 600; color: var(--ink);">A spreadsheet workbook, reviewed manually</h2>
+      <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: var(--ink-soft); line-height: 1.55;">
+        <li>A 23-tab workbook (1997&ndash;2019): berths as rows, days as columns, occupant names entered as free text</li>
+        <li>Berth length embedded in row labels; no structured fields anywhere in the source</li>
+        <li>No vessel dimension data (length, beam, draft) recorded in the schedule</li>
+        <li>Double-bookings identified only through manual visual review of the grid</li>
+        <li>No mechanism to confirm a vessel physically fits its assigned berth</li>
+        <li>Formatting inconsistent across years: three distinct header layouts, unlabeled rows, one mislabeled year</li>
+      </ul>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--built);"></div>
+        <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--built);">Approach</div>
+      </div>
+      <h2 style="font-size: 23px; font-weight: 600; color: var(--ink);">Design the system, then validate it against the full record</h2>
+      <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: var(--ink-soft); line-height: 1.55;">
+        <li>A structured application (FastAPI, SQLite) with a normalized data model for berths, vessels, and bookings</li>
+        <li>Automatic double-booking rejection, applied at entry and re-verified retroactively across all 23 years</li>
+        <li>Automatic fit-checking against length, beam, and draft, with unknown data treated as its own explicit state</li>
+        <li>An import pipeline engineered to handle every year of source data, not only an initial sample</li>
+        <li>A utilization dashboard, a conflict-resolution engine, full-history search, and bulk data import</li>
+        <li>21 automated tests, continuous integration on every change, and a written specification of requirements and verification</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SECTION 1: CORE REQUIREMENTS -->
+  <div id="problems" style="padding: 56px 96px 8px; scroll-margin-top: 24px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--navy); padding-bottom: 12px; margin-bottom: 28px;">
+      <h2 style="font-size: 21px; font-weight: 600; color: var(--navy);">1. Core Requirements</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px;">
+        <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 8px;">Double-Booking Detection</h3>
+        <p style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">Every new reservation is checked against existing reservations on the same berth for overlapping dates. A conflicting request is rejected and identifies the specific reservation it collides with; the full history can also be re-audited on demand.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px;">
+        <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 8px;">Physical Fit Verification</h3>
+        <p style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">A vessel exceeding a berth's length is rejected outright; a berth offering less than the standard 10% clearance margin generates a warning. Beam and draft are checked the same way. When a dimension is unknown, the system states that explicitly rather than assuming a pass.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: CAPABILITIES -->
+  <div id="capabilities" style="padding: 56px 96px 8px; scroll-margin-top: 24px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--navy); padding-bottom: 12px; margin-bottom: 28px;">
+      <h2 style="font-size: 21px; font-weight: 600; color: var(--navy);">2. Capabilities Beyond the Core Requirements</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Berth Recommendation</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Ranks available, fitting berths by efficient use of space, favoring channel-adjacent berths for deep-draft vessels and easier-access berths for guest or novice crews.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Utilization Dashboard</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Reports berth occupancy, double-booked days by month, and highest-usage vessels &mdash; visibility an audit list alone does not provide.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Conflict Resolution Engine</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Resolves every outstanding conflict in a single pass using a proven scheduling algorithm that mathematically guarantees the best possible outcome, rather than correcting bookings one at a time.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Full-History Search</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Locates a vessel or event by name across all 23 years and navigates directly to the matching record, without paging through individual months.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Bulk Dimension Import</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A CSV upload populates vessel length, beam, and draft by name. Verified in production use to reduce open fit-verification warnings from 31 to 1 on the initial data subset.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Interactive Schedule Grid</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The same berth-by-day layout staff have relied on, rebuilt as a working interface: select to book, select to inspect, conflicts flagged automatically.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Documented Override Workflow</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A booking that only trips a soft warning (marginal clearance, for example) can be approved deliberately rather than automatically blocked, and the system requires a stated reason, preserving a clear record of every exception.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">RESTful API with Live Documentation</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Every function &mdash; booking, search, dimension import, conflict resolution &mdash; is exposed through a documented API with interactive, auto-generated reference documentation, so the system can integrate with other tools, not only its own interface.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Automatic Vessel Classification</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Vessel type is inferred directly from standard designation prefixes (research, fishing, motor, sailing, tug, barge) during import, populating the registry without manual data entry.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Repeatable, Non-Destructive Import</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Re-running the import against updated source records never creates a duplicate booking; existing data is checked before anything new is written, so the process can be run again at any time with no cleanup required.</p>
+      </div>
+      <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Tidal and Maneuverability-Aware Placement</h3>
+        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Berths are categorized by physical characteristics &mdash; channel-adjacent, T-head, alongside, inner &mdash; and both the recommendation and resolution engines factor these into placement, not length alone.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPOTLIGHT: PRIORITY-AWARE SCHEDULING -->
+  <div id="priority" style="padding: 8px 96px 56px; scroll-margin-top: 24px;">
+    <div style="background: var(--navy-deep); border-radius: 14px; padding: 40px 44px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 44px;">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #7fd4c0;">Capability Spotlight</div>
+        <h2 style="font-size: 26px; font-weight: 600; color: #ffffff; line-height: 1.25;">Priority-Aware Conflict Resolution</h2>
+        <p style="font-size: 14.5px; color: #c9dced; line-height: 1.65;">Not all of WHOI's work carries equal operational stakes. A funded, time-boxed expedition &mdash; supporting ocean-climate solutions, deep-sea engineering, or ecological resilience research under initiatives such as the Campaign for Our Ocean Planet &mdash; is not interchangeable with a routine guest visit when a berth conflict has to be resolved. This system makes that distinction explicit rather than treating every reservation as equally displaceable.</p>
+        <p style="font-size: 14.5px; color: #c9dced; line-height: 1.65;">Every booking carries a priority tier. The conflict-resolution engine ranks priority ahead of reservation length: a two-day critical mission is protected over a twenty-one-day routine booking it conflicts with &mdash; the reverse of what a length-only rule would produce. This was confirmed both in isolated testing and against a live database, not assumed from the algorithm design alone.</p>
+        <div style="display: flex; gap: 28px; margin-top: 8px;">
+          <div>
+            <div style="font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: #ffffff;">868</div>
+            <div style="font-size: 12px; color: #9fc3e0;">bookings auto-elevated on import</div>
+          </div>
+          <div>
+            <div style="font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: #ffffff;">2</div>
+            <div style="font-size: 12px; color: #9fc3e0;">dedicated resolver tests, plus a live integration check</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; justify-content: center;">
+        <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 16px 18px;">
+          <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">Routine &mdash; default</div>
+          <div style="font-size: 13px; color: #b7cfe4; line-height: 1.5;">Guest vessels, community events, and ordinary visits.</div>
+        </div>
+        <div style="background: rgba(108,92,231,0.16); border: 1px solid #6c5ce7; border-radius: 10px; padding: 16px 18px;">
+          <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">Elevated &mdash; standing programs</div>
+          <div style="font-size: 13px; color: #d9d4fb; line-height: 1.5;">Applied automatically to research vessels and Coast Guard cutters identified during import.</div>
+        </div>
+        <div style="background: rgba(179,0,27,0.16); border: 1px solid #b3001b; border-radius: 10px; padding: 16px 18px;">
+          <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">Critical &mdash; mission-critical work</div>
+          <div style="font-size: 13px; color: #f3c9cf; line-height: 1.5;">Reserved for time-boxed missions where a scheduling conflict carries real operational cost.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: DATA FINDINGS -->
+  <div id="findings" style="padding: 56px 96px 8px; scroll-margin-top: 24px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--navy); padding-bottom: 12px; margin-bottom: 12px;">
+      <h2 style="font-size: 21px; font-weight: 600; color: var(--navy);">3. Data Quality Findings Across 23 Years of Records</h2>
+    </div>
+    <p style="font-size: 14px; color: var(--ink-soft); margin-bottom: 24px; max-width: 900px; line-height: 1.6;">Each finding below was identified by running the import process against the complete, unmodified source workbook and auditing its output for correctness &mdash; not by inspecting the code in isolation.</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+
+      <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Three header layouts, one parser</div>
+        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The month header, weekday row, and day-number row appear in three distinct arrangements across the workbook. The least common arrangement, where day numbers are embedded in the header itself, initially produced zero bookings for 15 of the 23 years.</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Unlabeled berth rows</div>
+        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Rows containing real bookings but no berth name were indistinguishable from a blank row marking the end of a month, causing the reservation to be dropped. These are now retained under an explicit "Unidentified" berth category.</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Non-standard berth names</div>
+        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Two berths &mdash; "North Finger Piers" and "Small craft slips (institution boats)" &mdash; do not follow the standard "Name - Length" format. Six years of Finger Piers bookings were excluded from import before this was identified and corrected.</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Misread month boundaries</div>
+        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A month header written without its year was not recognized as the end of the prior month's block, causing that header row to be misread as a berth &mdash; producing invalid entries literally named "July" and "August."</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--navy);">A labeling error in the source</div>
+        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The 2010 tab's own November and December headers are mislabeled 2018, with vessel names positioned in what should be day-number cells. Accepting that row as valid produced incorrectly dated bookings and a fabricated vessel entry. A validation rule now requires day-numbering to begin at 1, rejecting the malformed row instead of guessing.</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Operational notes recorded as vessels</div>
+        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Scheduling notes and maintenance entries (arrival times, "Bollard replacement, west face," "Fueling @0800") were being recorded as vessel bookings. These are now correctly classified as operational events, not reservations.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 4: PROCESS -->
+  <div id="process" style="padding: 56px 96px 64px; scroll-margin-top: 24px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--navy); padding-bottom: 12px; margin-bottom: 28px;">
+      <h2 style="font-size: 21px; font-weight: 600; color: var(--navy);">4. Engineering Process and Verification</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div style="display: flex; gap: 14px;">
+        <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">Testing and Continuous Integration</h3>
+          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">Twenty-one automated tests were implemented, including a dedicated regression test for each finding above to prevent recurrence. A continuous integration pipeline runs the full suite on every change and identified a genuine configuration failure on its first execution.</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">A Dedicated Review Pass</h3>
+          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">Once the core functionality was complete, a separate review removed unused code, consolidated a function call duplicated across four locations into a single reference, and eliminated redundant logic &mdash; before any further features were added.</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">Reproducible Setup</h3>
+          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">A single command takes a clean environment to a fully running application loaded with all 23 years of data. This was confirmed by removing the local environment entirely and rebuilding it from nothing.</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">A Written Specification</h3>
+          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">A separate document records the problem statement, requirements with defined success criteria, real constraints, explicit assumptions, known limitations, and the method used to verify each component.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background: var(--navy-deep); padding: 28px 96px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <p style="font-size: 13px; color: #9fc3e0;">github.com/sofiagn05/whoi-berth-system</p>
+    <p style="font-size: 13px; color: #7fa8c9;">All nine conflicts identified are attributed to the single "Unidentified" berth category; every correctly labeled berth remains conflict-free across all 23 years.</p>
+  </div>
+
+</div>
+</body>
+</html>
