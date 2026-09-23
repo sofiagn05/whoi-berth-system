@@ -12,10 +12,13 @@ Two stages:
    berth's (possibly mutually overlapping) reservations to keep in place.
    This is the classic weighted interval scheduling DP (Kleinberg & Tardos):
    for a single resource, it is the *optimal* choice of non-overlapping
-   reservations maximizing total kept weight. Weight = reservation length
-   in days, so a 15-day research cruise is preferred over a 1-day community
-   sail day it conflicts with -- plain "maximize count" would prefer the
-   opposite, since dropping the long booking frees more slots.
+   reservations maximizing total kept weight. Weight is priority-first,
+   duration-second (`_booking_weight`): a CRITICAL research mission is
+   never bumped for a ROUTINE booking regardless of length, and among
+   reservations of equal priority a 15-day cruise is preferred over a
+   1-day community sail day it conflicts with -- plain "maximize count"
+   would prefer the opposite, since dropping the long booking frees more
+   slots.
 
 2. Whatever gets displaced is greedily reassigned to the best available,
    physically-fitting berth elsewhere (reusing the same scoring heuristic
@@ -31,12 +34,30 @@ from sqlalchemy.orm import Session
 
 from app import crud, models
 from app.conflicts import date_ranges_overlap
+from app.models import PRIORITY_RANK
+
+# Large enough that priority tier always dominates the duration tiebreaker,
+# for any booking length this system will realistically see (even a
+# multi-year reservation is orders of magnitude under this). A CRITICAL
+# two-day research cruise must outrank a ROUTINE three-week guest booking
+# it conflicts with -- not the other way around.
+PRIORITY_WEIGHT = 1_000_000
+
+
+def _booking_weight(b) -> int:
+    duration_days = (b.end_date - b.start_date).days + 1
+    return PRIORITY_RANK[b.priority] * PRIORITY_WEIGHT + duration_days
 
 
 def weighted_interval_schedule_keep(bookings: list):
-    """Optimal (by total days kept) selection of non-overlapping bookings
+    """Optimal (by total weight kept) selection of non-overlapping bookings
     from a set that all compete for the same single-occupancy resource.
-    Returns (kept, displaced)."""
+
+    Weight is priority-first, duration-second (see _booking_weight): two
+    bookings of equal priority still resolve the way the original
+    duration-only version did (the longer one wins), but a higher-priority
+    booking is never displaced in favor of a lower-priority one, regardless
+    of length. Returns (kept, displaced)."""
     if not bookings:
         return [], []
 
@@ -44,7 +65,7 @@ def weighted_interval_schedule_keep(bookings: list):
     n = len(ordered)
     starts = [b.start_date for b in ordered]
     ends = [b.end_date for b in ordered]
-    weights = [(b.end_date - b.start_date).days + 1 for b in ordered]
+    weights = [_booking_weight(b) for b in ordered]
 
     # p[i] = index (0-based) of the latest booking that ends before booking i
     # starts, or -1 if none. ends[0:i] is sorted ascending, so binary search.

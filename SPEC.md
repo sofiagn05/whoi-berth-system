@@ -46,6 +46,7 @@ actually want to run:
 |---|---|---|---|
 | R6 | The system must work against the *real* data, not just a clean mock | Import all 23 years without hand-fixing the source file first | Verified by running the importer against the unmodified source workbook and checking output counts/dates/names for corruption at each stage — this is what surfaced 7 real bugs (§6 of README) |
 | R7 | A reviewer can run this with near-zero setup friction | `make import && make run` from a clean checkout, no manual steps | Verified by deleting `.venv` and `berths.db` and re-running from scratch; CI does the equivalent on every push |
+| R8 | Conflict resolution must reflect that not all bookings carry equal operational stakes | A higher-priority reservation is never displaced by a lower-priority one, regardless of length | Two unit tests (`test_critical_priority_wins_even_against_a_much_longer_booking`, `test_equal_priority_still_falls_back_to_duration`) plus a direct integration check: a 2-day CRITICAL booking and a 21-day ROUTINE booking were inserted into a live database as a real conflict, and the resolver's actual output was inspected, not assumed from the unit test alone |
 
 ## 3. Constraints
 
@@ -140,7 +141,14 @@ actually done at each stage:
    (`resolver.weighted_interval_schedule_keep`) — a hand-constructed test
    case where two possible outcomes exist (keep one long booking, or keep
    two shorter non-conflicting ones) with the expected winner computed by
-   hand first, then asserted — not just "it returns something."
+   hand first, then asserted — not just "it returns something." Priority
+   weighting (R8) added two more hand-constructed cases the same way — one
+   where a short CRITICAL booking must beat a much longer ROUTINE one,
+   one confirming equal-priority bookings still fall back to the original
+   duration rule — plus a separate integration check that inserted the
+   same conflict into a real SQLite database and read the resolver's
+   actual output, since the unit tests exercise the pure function alone
+   and wouldn't catch a wiring mistake between the ORM objects and it.
 4. **The grid parser, per format variant** — each of the 5 real bugs
    found while scaling to 23 years (README §6) got its own regression
    test reproducing the *exact* failure condition in isolation (a

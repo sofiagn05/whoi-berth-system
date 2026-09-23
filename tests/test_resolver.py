@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.models import Priority
 from app.resolver import weighted_interval_schedule_keep
 
 
@@ -13,6 +14,7 @@ class FakeBooking:
     id: int
     start_date: date
     end_date: date
+    priority: Priority = Priority.ROUTINE
 
 
 def test_no_conflict_keeps_everything():
@@ -52,3 +54,24 @@ def test_three_way_conflict_picks_best_non_overlapping_combination():
 
 def test_empty_input():
     assert weighted_interval_schedule_keep([]) == ([], [])
+
+
+def test_critical_priority_wins_even_against_a_much_longer_booking():
+    # A 2-day CRITICAL research mission conflicts with a 21-day ROUTINE
+    # guest booking. Duration alone would keep the 21-day booking; priority
+    # must dominate that regardless of length.
+    routine = FakeBooking(1, date(2026, 3, 1), date(2026, 3, 21), priority=Priority.ROUTINE)
+    critical = FakeBooking(2, date(2026, 3, 10), date(2026, 3, 11), priority=Priority.CRITICAL)
+    kept, displaced = weighted_interval_schedule_keep([routine, critical])
+    assert kept == [critical]
+    assert displaced == [routine]
+
+
+def test_equal_priority_still_falls_back_to_duration():
+    # Same priority tier -> duration remains the tiebreaker, exactly as
+    # before priority existed.
+    short = FakeBooking(1, date(2026, 5, 1), date(2026, 5, 2), priority=Priority.ELEVATED)
+    long = FakeBooking(2, date(2026, 5, 1), date(2026, 5, 10), priority=Priority.ELEVATED)
+    kept, displaced = weighted_interval_schedule_keep([short, long])
+    assert kept == [long]
+    assert displaced == [short]

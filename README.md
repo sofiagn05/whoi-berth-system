@@ -11,6 +11,17 @@ See [SPEC.md](SPEC.md) for the problem statement, requirements and success
 criteria, constraints, assumptions, and — for every piece of logic below —
 exactly how it was validated, not just asserted to work.
 
+**Data provenance.** The prompt for this project stated: *"A sample
+schedule is attached to this email, containing 23 years of bookings."*
+`data/dock_schedule_workbook.ods` is that attachment — the full
+23-tab workbook (1997–2019), downloaded and provided directly rather than
+reconstructed or mocked. `data/years/*.csv` are that same workbook's year
+tabs, exported by `scripts/export_ods_years.py` (see **The real data**,
+below); `data/vessel_dimensions_sample.csv` is the one file in `data/`
+that isn't from that attachment — it's dimension data I put together
+myself to demonstrate `POST /vessels/import`, documented as such in
+**Closing the vessel-dimensions gap**.
+
 ## Why this matters to me
 
 WHOI's Schiller Center for Reef Solutions is racing to find and protect
@@ -110,10 +121,13 @@ Two features go past "detect and flag" into "understand the pattern" and
      reservations to keep in place**, using weighted interval scheduling
      (`app/resolver.py::weighted_interval_schedule_keep`) — the classic
      Kleinberg–Tardos DP, which is *provably optimal* for a single
-     resource. Weight = reservation length in days, so a 15-day research
-     cruise is kept over a 1-day community sail day it conflicts with;
-     plain "maximize the count of bookings kept" would do the opposite,
-     since dropping the long booking frees more slots for short ones.
+     resource. The weight is **priority first, reservation length
+     second** (see *Priority-aware scheduling*, below): among
+     reservations of equal priority, a 15-day research cruise is kept
+     over a 1-day community sail day it conflicts with, the same way a
+     plain "maximize total length" rule would; but a short, high-priority
+     reservation is never displaced by a longer, lower-priority one, which
+     a length-only rule would get backwards.
   2. **Greedily reassign whatever got displaced** to the best available,
      physically-fitting berth elsewhere, tracking a live occupancy
      timeline so two displaced bookings can't collide with each other
@@ -132,6 +146,35 @@ Two features go past "detect and flag" into "understand the pattern" and
   can answer. `python -m app.seed` instead gives a small, clean,
   intentional conflict on a normal named berth if you want to see the
   weight-preference behavior in isolation.
+
+## Priority-aware scheduling
+
+Not all of WHOI's work carries the same operational stakes. A funded,
+time-boxed expedition under a standing research program is not
+interchangeable with a routine guest visit when a berth conflict has to
+be resolved one way or the other. Every booking now carries a priority
+tier — `routine` (default), `elevated` (standing institutional programs),
+or `critical` (time-boxed, mission-critical work) — set from the booking
+form or the API.
+
+This isn't cosmetic: it changes what the resolver actually decides.
+`app/resolver.py::_booking_weight` ranks priority ahead of reservation
+length, so a 2-day `critical` mission is protected over a 21-day
+`routine` booking it conflicts with, not the other way around — verified
+directly in `tests/test_resolver.py::test_critical_priority_wins_even_against_a_much_longer_booking`,
+and end-to-end against real ORM objects (not just the pure scheduling
+function) by inserting exactly that conflict into a live database and
+confirming the resolver's output.
+
+Priority isn't only set by hand, either. During import, vessels already
+classified as research vessels or Coast Guard cutters (from the same R/V
+and USCGC prefix parsing used to infer vessel type) default to `elevated`
+rather than `routine` — 868 of the 2,258 bookings across all 23 years
+qualify. This is a starting default that reflects WHOI's own standing
+research operations, not a judgment on any individual booking, and any
+reservation's priority can be adjusted afterward. The grid marks
+`elevated` and `critical` bookings with a colored ring so the distinction
+is visible at a glance, not just in the data.
 
 ## The real data: what 23 years of it actually looked like
 

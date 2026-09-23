@@ -18,6 +18,22 @@ class BookingKind(str, enum.Enum):
     EVENT = "event"
 
 
+class Priority(str, enum.Enum):
+    """How much a reservation should be protected when berths run short.
+
+    Ranked, not just labeled: the conflict resolver treats priority as the
+    primary sort key and reservation length as a tiebreaker only within the
+    same tier -- a two-day CRITICAL mission is kept over a three-week
+    ROUTINE booking it conflicts with, not the other way around.
+    """
+    ROUTINE = "routine"    # default: guest boats, community events, ordinary visits
+    ELEVATED = "elevated"  # standing institutional programs (e.g. resident research vessels)
+    CRITICAL = "critical"  # time-boxed, mission-critical work (e.g. a funded research cruise)
+
+
+PRIORITY_RANK = {Priority.ROUTINE: 0, Priority.ELEVATED: 1, Priority.CRITICAL: 2}
+
+
 class Berth(Base):
     __tablename__ = "berths"
 
@@ -59,6 +75,7 @@ class Booking(Base):
     event_name = Column(String, nullable=True)  # e.g. "Community Sail Day" (null for vessels)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)  # inclusive
+    priority = Column(Enum(Priority), default=Priority.ROUTINE, nullable=False)
 
     override_reason = Column(String, nullable=True)  # set if a warning was force-accepted
 

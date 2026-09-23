@@ -49,6 +49,7 @@ async function submitBooking(force) {
     berth_id: Number(document.getElementById("berth_id").value),
     start_date: document.getElementById("start_date").value,
     end_date: document.getElementById("end_date").value,
+    priority: document.getElementById("priority").value,
     force: !!force,
   };
   if (kind === "vessel") {
@@ -113,11 +114,14 @@ document.getElementById("suggest-btn").addEventListener("click", async () => {
   }
 });
 
+const PRIORITY_LABEL = { routine: "", elevated: "Elevated", critical: "Critical" };
+
 async function showCellDetail(occupants, berthCode, day, dateStr) {
   const el = document.getElementById("cell-detail");
   const rows = await Promise.all(occupants.map(async (o) => `
     <div class="issue ${occupants.length > 1 ? 'error' : 'ok'}">
       <strong>${o.name}</strong> (${o.kind}) on ${berthCode}, ${dateStr}
+      ${o.priority && o.priority !== "routine" ? `<span class="priority-badge priority-${o.priority}">${PRIORITY_LABEL[o.priority]}</span>` : ""}
       <button class="secondary" data-del="${o.booking_id}" style="margin-left:10px">Delete</button>
     </div>`));
   el.innerHTML = `<div class="card" style="margin-top:12px; padding:14px;">${rows.join("")}</div>`;
@@ -172,9 +176,12 @@ async function loadCalendar() {
         return `<td class="cal-cell" data-berth="${row.berth_id}" data-date="${dateStr}"></td>`;
       }
       const cls = dayInfo.conflict ? "conflict" : (dayInfo.occupants[0].kind === "event" ? "occupied-event" : "occupied-vessel");
+      const topPriority = dayInfo.occupants.some(o => o.priority === "critical") ? "critical"
+        : dayInfo.occupants.some(o => o.priority === "elevated") ? "elevated" : null;
+      const priorityCls = !dayInfo.conflict && topPriority ? ` cell-priority-${topPriority}` : "";
       const title = dayInfo.occupants.map(o => o.name).join(" / ");
       const label = dayInfo.occupants.length > 1 ? `${dayInfo.occupants.length}⚠` : (dayInfo.occupants[0].name || "").slice(0, 3);
-      return `<td class="cal-cell ${cls}" title="${title.replace(/"/g, "'")}"
+      return `<td class="cal-cell ${cls}${priorityCls}" title="${title.replace(/"/g, "'")}"
                   data-berth="${row.berth_id}" data-date="${dateStr}" data-occupants='${JSON.stringify(dayInfo.occupants)}'>${label}</td>`;
     }).join("");
     return `<tr><td class="berth-label">${row.berth_code} (${fmtLen(row.berth_length_ft)})</td>${cells}</tr>`;
@@ -189,6 +196,8 @@ async function loadCalendar() {
       <span><span class="swatch" style="background:#dbe9ff"></span>vessel</span>
       <span><span class="swatch" style="background:#ffe6c7"></span>event</span>
       <span><span class="swatch" style="background:#f8b4ac"></span>double-booking</span>
+      <span><span class="swatch" style="background:#fff;box-shadow:inset 0 0 0 2px #6c5ce7"></span>elevated priority</span>
+      <span><span class="swatch" style="background:#fff;box-shadow:inset 0 0 0 2px #b3001b"></span>critical priority</span>
     </div>`;
 
   document.getElementById("cell-detail").innerHTML = "";

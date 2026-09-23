@@ -200,6 +200,7 @@ def calendar_grid(year: int, month: int, db: Session = Depends(get_db)):
             for d in iter_days(clipped_start, clipped_end):
                 cells[booking.berth_id][d.day].append({
                     "booking_id": booking.id, "kind": booking.kind, "name": occupant,
+                    "priority": booking.priority,
                 })
 
     rows = []

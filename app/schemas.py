@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, model_validator
 
-from app.models import BerthLocation, BookingKind
+from app.models import BerthLocation, BookingKind, Priority
 
 
 class BerthCreate(BaseModel):
@@ -52,6 +52,7 @@ class BookingCreate(BaseModel):
     event_name: Optional[str] = None
     start_date: date
     end_date: date
+    priority: Priority = Priority.ROUTINE
     force: bool = False  # accept the booking despite non-fatal "warning" issues
     override_reason: Optional[str] = None  # required if force=True and there were warnings
 
@@ -74,6 +75,7 @@ class BookingOut(BaseModel):
     event_name: Optional[str]
     start_date: date
     end_date: date
+    priority: Priority
     override_reason: Optional[str]
 
     class Config:

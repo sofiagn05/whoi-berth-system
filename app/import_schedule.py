@@ -27,7 +27,19 @@ from pathlib import Path
 from typing import Optional
 
 from app.database import Base, SessionLocal, engine
-from app.models import Berth, Booking, BookingKind, Vessel
+from app.models import Berth, Booking, BookingKind, Priority, Vessel
+
+# Vessel types tied to WHOI's own standing research programs default to
+# ELEVATED priority on import, so a resident research vessel or a Coast
+# Guard cutter supporting a mission isn't treated as equally displaceable
+# as a routine guest visit when the resolver has to choose. This is a
+# starting default, not a judgment on any specific booking -- it can be
+# raised to CRITICAL or lowered per booking after import.
+ELEVATED_VESSEL_TYPES = {"research vessel", "coast guard cutter"}
+
+
+def default_priority(vessel_type: str | None) -> Priority:
+    return Priority.ELEVATED if vessel_type in ELEVATED_VESSEL_TYPES else Priority.ROUTINE
 
 MONTHS = {
     "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
@@ -320,7 +332,7 @@ def import_files(paths: list[Path], db=None):
                     stats["bookings_skipped_dupe"] += 1
                     continue
                 db.add(Booking(kind=BookingKind.VESSEL, berth_id=berth.id, vessel_id=vessel.id,
-                                start_date=start, end_date=end))
+                                start_date=start, end_date=end, priority=default_priority(vessel_type)))
                 existing_bookings.add(key)
                 stats["bookings_created"] += 1
 

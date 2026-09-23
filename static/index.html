@@ -94,6 +94,16 @@
       </div>
 
       <div>
+        <label>Priority</label>
+        <select id="priority">
+          <option value="routine">Routine</option>
+          <option value="elevated">Elevated (standing institutional program)</option>
+          <option value="critical">Critical (time-boxed, mission-critical work)</option>
+        </select>
+        <p class="muted-note" style="margin: 4px 0 0;">If berths run short, the conflict resolver protects higher-priority reservations first, regardless of how long a lower-priority one is.</p>
+      </div>
+
+      <div>
         <label>Berth</label>
         <select id="berth_id"></select>
         <button type="button" class="secondary" id="suggest-btn" style="margin-top:6px">Suggest a berth for this vessel/dates</button>

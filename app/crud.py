@@ -79,6 +79,7 @@ def create_booking(db: Session, booking_in) -> models.Booking:
         event_name=booking_in.event_name,
         start_date=booking_in.start_date,
         end_date=booking_in.end_date,
+        priority=booking_in.priority,
         override_reason=booking_in.override_reason if warnings else None,
     )
     db.add(booking)
