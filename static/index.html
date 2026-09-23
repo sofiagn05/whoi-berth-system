@@ -12,6 +12,24 @@
 </header>
 
 <main>
+  <section class="stat-row">
+    <div class="stat-card" id="stat-occupancy-card">
+      <div class="stat-label">Occupancy Rate</div>
+      <div class="stat-value" id="stat-occupancy">&ndash;</div>
+      <div class="stat-sub">average across all berths</div>
+    </div>
+    <div class="stat-card" id="stat-conflicts-card">
+      <div class="stat-label">Total Conflicts</div>
+      <div class="stat-value" id="stat-conflicts">&ndash;</div>
+      <div class="stat-sub">double-booking pairs, full history</div>
+    </div>
+    <div class="stat-card" id="stat-berths-card">
+      <div class="stat-label">Active Berths</div>
+      <div class="stat-value" id="stat-berths">&ndash;</div>
+      <div class="stat-sub">with at least one booking</div>
+    </div>
+  </section>
+
   <section class="card">
     <h2>Search history</h2>
     <p class="muted-note">Find a vessel or event by name across every year of bookings, without paging
@@ -45,7 +63,7 @@
   <section class="card">
     <h2>Dock schedule grid</h2>
     <p>The same berth &times; day grid staff used to check by eye for double-bookings &mdash;
-       except this one flags conflicts (in red) automatically. Click an empty cell to start a
+       except this one flags conflicts automatically. Click an empty cell to start a
        booking there; click an occupied cell to inspect or delete it.</p>
     <div class="row" style="max-width: 320px; align-items: end;">
       <div>
@@ -61,12 +79,53 @@
     <div id="cell-detail"></div>
   </section>
 
-  <section class="card" id="booking-form-card">
-    <h2>New booking</h2>
+  <section class="card">
+    <h2>Vessel dimensions</h2>
+    <p>The imported schedule has vessel <em>names</em> but not LOA/beam/draft, so most fit checks
+       currently show as "unknown" rather than pass/fail. Upload a CSV (columns: <code>name,
+       loa_ft, beam_ft, draft_ft, vessel_type</code>) to fill in dimensions for vessels that already
+       exist &mdash; this won't create new vessels, only update matching names.</p>
+    <input type="file" id="vessel-csv-input" accept=".csv" />
+    <button id="upload-vessel-csv" class="secondary" style="margin-top:8px">Upload</button>
+    <div id="vessel-upload-results" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <h2>Audit: existing double-bookings &amp; fit violations</h2>
+    <p>Runs the double-booking and dimension-fit checks across <em>every</em> booking in the system —
+       the automated replacement for eyeballing the grid.</p>
+    <button id="run-audit">Run audit</button>
+    <div id="audit-summary"></div>
+    <div id="audit-results"></div>
+
+    <h3 style="margin-top:20px">Resolve all conflicts at once</h3>
+    <p>Computes a single reassignment plan for <em>every</em> conflict in the system together
+       (optimal weighted interval scheduling per berth, then best-fit placement for whatever's
+       displaced) instead of fixing one booking at a time.</p>
+    <button id="compute-plan" class="secondary">Compute resolution plan</button>
+    <button id="apply-plan" style="display:none">Apply plan</button>
+    <div id="resolve-results"></div>
+  </section>
+</main>
+
+<!-- Floating action button opens the booking modal -->
+<button class="fab" id="fab-new-booking" title="New booking" aria-label="New booking">+</button>
+
+<!-- New booking modal -->
+<div class="modal-backdrop" id="booking-modal-backdrop">
+  <div class="modal" id="booking-form-card" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+    <div class="modal-head">
+      <h2 id="booking-modal-title">New booking</h2>
+      <button type="button" class="modal-close" id="booking-modal-close" aria-label="Close">&times;</button>
+    </div>
     <form id="booking-form">
       <div>
         <label>Kind</label>
-        <select id="kind">
+        <div class="segmented" id="kind-segmented" role="group" aria-label="Booking kind">
+          <button type="button" data-kind="vessel" class="active">Vessel</button>
+          <button type="button" data-kind="event">Event</button>
+        </div>
+        <select id="kind" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;" tabindex="-1" aria-hidden="true">
           <option value="vessel">Vessel</option>
           <option value="event">Non-vessel event (e.g. community sail day)</option>
         </select>
@@ -100,52 +159,24 @@
           <option value="elevated">Elevated (standing institutional program)</option>
           <option value="critical">Critical (time-boxed, mission-critical work)</option>
         </select>
-        <p class="muted-note" style="margin: 4px 0 0;">If berths run short, the conflict resolver protects higher-priority reservations first, regardless of how long a lower-priority one is.</p>
+        <p class="muted-note" style="margin: 6px 0 0;">If berths run short, the conflict resolver protects higher-priority reservations first, regardless of how long a lower-priority one is.</p>
       </div>
 
       <div>
         <label>Berth</label>
         <select id="berth_id"></select>
-        <button type="button" class="secondary" id="suggest-btn" style="margin-top:6px">Suggest a berth for this vessel/dates</button>
+        <button type="button" class="secondary" id="suggest-btn" style="margin-top:8px">Suggest a berth for this vessel/dates</button>
         <div id="suggest-inline-results"></div>
       </div>
 
-      <div>
+      <div style="display:flex; gap:10px;">
         <button type="submit">Check &amp; Book</button>
         <button type="button" class="secondary" id="force-btn" style="display:none">Book anyway (override warning)</button>
       </div>
       <div id="form-status"></div>
     </form>
-  </section>
-
-  <section class="card">
-    <h2>Vessel dimensions</h2>
-    <p>The imported schedule has vessel <em>names</em> but not LOA/beam/draft, so most fit checks
-       currently show as "unknown" rather than pass/fail. Upload a CSV (columns: <code>name,
-       loa_ft, beam_ft, draft_ft, vessel_type</code>) to fill in dimensions for vessels that already
-       exist &mdash; this won't create new vessels, only update matching names.</p>
-    <input type="file" id="vessel-csv-input" accept=".csv" />
-    <button id="upload-vessel-csv" class="secondary" style="margin-top:8px">Upload</button>
-    <div id="vessel-upload-results" style="margin-top:10px"></div>
-  </section>
-
-  <section class="card">
-    <h2>Audit: existing double-bookings &amp; fit violations</h2>
-    <p>Runs the double-booking and dimension-fit checks across <em>every</em> booking in the system —
-       the automated replacement for eyeballing the grid.</p>
-    <button id="run-audit">Run audit</button>
-    <div id="audit-summary"></div>
-    <div id="audit-results"></div>
-
-    <h3 style="margin-top:20px">Resolve all conflicts at once</h3>
-    <p>Computes a single reassignment plan for <em>every</em> conflict in the system together
-       (optimal weighted interval scheduling per berth, then best-fit placement for whatever's
-       displaced) instead of fixing one booking at a time.</p>
-    <button id="compute-plan" class="secondary">Compute resolution plan</button>
-    <button id="apply-plan" style="display:none">Apply plan</button>
-    <div id="resolve-results"></div>
-  </section>
-</main>
+  </div>
+</div>
 
 <script src="/static/app.js"></script>
 </body>

@@ -286,6 +286,26 @@ berth and month each match is in. Browsing 23 years of history one month at
 a time doesn't scale for "when did this vessel last berth here" — the UI's
 search box jumps straight to the matching month in the calendar grid.
 
+## Interface
+
+The live app (`static/index.html`/`app.js`/`style.css`) uses a dark,
+high-density interface built for someone who'll be looking at this
+schedule daily, not a marketing page: a floating action button opens
+booking creation as a modal instead of taking over the page, the
+vessel/event choice is a segmented pill control (not a `<select>`
+dropdown) wired to the same underlying form logic, and three key-stat
+cards up top (occupancy rate, total conflicts, active berths) are
+computed live from `/analytics` and `/audit` rather than hardcoded. A
+double-booked grid cell gets a diagonal-stripe overlay and a pulsing
+alert glow so it reads as urgent at a glance, not just a different
+background color; elevated/critical-priority bookings get their own
+ring color, distinct from the conflict state. All of this sits on top
+of the same endpoints and IDs the rest of this README describes — the
+redesign changed how the interface looks and is driven, not what it
+calls or how the booking/audit/resolver logic behaves, which is why the
+existing screenshots and behavior described elsewhere in this doc still
+hold.
+
 ## Data model
 
 - **Berth** — code, length, optional max beam/draft, a location category

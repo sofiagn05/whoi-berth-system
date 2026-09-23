@@ -23,6 +23,37 @@ document.getElementById("kind").addEventListener("change", (e) => {
   document.getElementById("vessel-field").style.display = isVessel ? "" : "none";
   document.getElementById("event-field").style.display = isVessel ? "none" : "";
   document.getElementById("suggest-btn").style.display = isVessel ? "" : "none";
+  document.querySelectorAll("#kind-segmented button").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.kind === e.target.value);
+  });
+});
+
+// Segmented pill control drives the same hidden <select id="kind">, so all
+// existing kind-change handling (above, and everywhere else that reads
+// #kind's value) keeps working untouched.
+document.querySelectorAll("#kind-segmented button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const select = document.getElementById("kind");
+    select.value = btn.dataset.kind;
+    select.dispatchEvent(new Event("change"));
+  });
+});
+
+// ---------- Booking modal ----------
+
+function openBookingModal() {
+  document.getElementById("booking-modal-backdrop").classList.add("open");
+}
+function closeBookingModal() {
+  document.getElementById("booking-modal-backdrop").classList.remove("open");
+}
+document.getElementById("fab-new-booking").addEventListener("click", () => openBookingModal());
+document.getElementById("booking-modal-close").addEventListener("click", () => closeBookingModal());
+document.getElementById("booking-modal-backdrop").addEventListener("click", (e) => {
+  if (e.target.id === "booking-modal-backdrop") closeBookingModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeBookingModal();
 });
 
 function renderIssues(issues) {
@@ -30,7 +61,7 @@ function renderIssues(issues) {
 }
 
 function prefillBooking({ berthId, date }) {
-  document.getElementById("booking-form-card").scrollIntoView({ behavior: "smooth", block: "center" });
+  openBookingModal();
   if (berthId) document.getElementById("berth_id").value = berthId;
   if (date) {
     document.getElementById("start_date").value = date;
@@ -217,8 +248,7 @@ async function loadCalendar() {
   });
 }
 
-document.getElementById("run-audit").addEventListener("click", async () => {
-  const result = await api("/audit");
+function renderAuditResult(result) {
   document.getElementById("audit-summary").innerHTML = `
     <span>Total bookings: <strong>${result.summary.total_bookings}</strong></span>
     <span>Double-booking pairs: <strong>${result.summary.double_booking_pairs}</strong></span>
@@ -234,6 +264,16 @@ document.getElementById("run-audit").addEventListener("click", async () => {
   const fitHtml = result.fit_violations.map(f => `
     <div class="issue ${f.severity}">Booking #${f.booking_id} — ${f.vessel_name} @ ${f.berth_code}: ${f.message}</div>`).join("");
   document.getElementById("audit-results").innerHTML = dbHtml + fitHtml || `<div class="issue ok">No issues found.</div>`;
+
+  const conflictsEl = document.getElementById("stat-conflicts");
+  const conflictsCard = document.getElementById("stat-conflicts-card");
+  conflictsEl.textContent = result.summary.double_booking_pairs;
+  conflictsCard.classList.toggle("stat-alert", result.summary.double_booking_pairs > 0);
+  conflictsCard.classList.toggle("stat-good", result.summary.double_booking_pairs === 0);
+}
+
+document.getElementById("run-audit").addEventListener("click", async () => {
+  renderAuditResult(await api("/audit"));
 });
 
 // ---------- Dashboard: utilization + conflict-frequency charts ----------
@@ -260,6 +300,17 @@ async function loadDashboard() {
   windowEl.textContent = data.window
     ? `Covering ${data.window.start} to ${data.window.end} (${data.window.total_days} days) · ${data.summary.total_bookings} bookings · busiest berth: ${data.summary.busiest_berth} (${data.summary.busiest_berth_pct}% occupied)`
     : "No bookings yet.";
+
+  if (data.utilization.length > 0) {
+    const avgOccupancy = data.utilization.reduce((sum, u) => sum + u.utilization_pct, 0) / data.utilization.length;
+    document.getElementById("stat-occupancy").textContent = avgOccupancy.toFixed(1) + "%";
+    document.getElementById("stat-berths").textContent = data.utilization.filter(u => u.booking_count > 0).length;
+  }
+
+  // The conflicts stat card reflects the same audit the "Run audit" button
+  // shows in detail; run it in the background on load so the top-level
+  // number is never stale, without duplicating the audit-rendering logic.
+  renderAuditResult(await api("/audit"));
 
   renderBarChart(
     document.getElementById("chart-utilization"),
