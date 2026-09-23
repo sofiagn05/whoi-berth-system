@@ -11,14 +11,17 @@
   :root {
     --navy: #0b3d5c;
     --navy-deep: #082b41;
+    --abyss: #041824;
     --ocean: #2a78d6;
-    --ink: #1a2733;
+    --teal: #0f8b8d;
+    --teal-bright: #17b3ac;
+    --ink: #142433;
     --ink-soft: #4a5a68;
-    --paper: #f7f5f0;
+    --paper: #f4f8f9;
     --card: #ffffff;
-    --line: #dfe2e0;
+    --line: #dde4e6;
     --given: #6c7a89;
-    --built: #1f7a3d;
+    --built: #0f8b8d;
     --accent: #c96a2c;
   }
   * { box-sizing: border-box; }
@@ -26,11 +29,58 @@
   h1, h2, h3 { font-family: "Fraunces", Georgia, serif; margin: 0; }
   a { color: var(--ocean); text-decoration: none; }
   p { margin: 0; }
-  .navlink { color: #cfe2f2; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.25); white-space: nowrap; }
-  .navlink:hover { background: rgba(255,255,255,0.08); }
+  .navlink { color: #cfe2f2; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.25); white-space: nowrap; transition: background 0.15s ease; }
+  .navlink:hover { background: rgba(23,179,172,0.25); border-color: var(--teal-bright); }
+
+  /* Ocean-depth reading gauge -- a nautical scroll indicator. As the reader
+     scrolls, the marker descends through the real oceanographic depth
+     zones WHOI itself studies (epipelagic through hadal). */
+  .depth-gauge { position: fixed; top: 0; right: 18px; bottom: 0; width: 34px; z-index: 40; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+  .depth-gauge-track { position: relative; width: 4px; flex: 1; margin: 40px 0; border-radius: 2px; background: linear-gradient(to bottom, #bfe3ea 0%, #2a78d6 22%, #0b3d5c 55%, #082b41 78%, #041824 100%); }
+  .depth-gauge-marker { position: absolute; left: 50%; width: 13px; height: 13px; border-radius: 50%; background: #ffffff; border: 2px solid var(--teal-bright); transform: translate(-50%, -50%); box-shadow: 0 0 0 4px rgba(23,179,172,0.18); transition: top 0.05s linear; }
+  .depth-gauge-label { position: fixed; right: 60px; font-size: 11px; font-weight: 700; color: #ffffff; background: var(--navy-deep); padding: 4px 10px; border-radius: 999px; white-space: nowrap; opacity: 0; transition: opacity 0.2s ease, top 0.05s linear; }
+  .depth-gauge-label.visible { opacity: 0.92; }
+  @media (max-width: 1100px) { .depth-gauge, .depth-gauge-label { display: none; } }
+
+  /* Wave divider -- a single restrained marine motif, not decoration piled on decoration */
+  .wave-divider { display: block; width: 100%; height: 34px; margin-top: -1px; }
+
+  /* Chart bar hover tooltip */
+  .viz-bar-row { position: relative; }
+  .viz-bar-tooltip { position: absolute; left: 160px; top: -30px; background: var(--navy-deep); color: #fff; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity 0.15s ease, transform 0.15s ease; z-index: 5; }
+  .viz-bar-row:hover .viz-bar-tooltip { opacity: 1; transform: translateY(0); }
+  .viz-bar-row:hover .viz-bar-track { outline: 2px solid var(--teal-bright); outline-offset: 1px; }
+
+  /* Detail-level toggle */
+  .toggle { display: inline-flex; border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 3px; gap: 2px; }
+  .toggle button { font-family: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: none; background: transparent; color: #cfe2f2; cursor: pointer; }
+  .toggle button.active { background: #ffffff; color: var(--navy-deep); }
+  body.detail-summary .detail-text { display: none; }
+  body.detail-summary .card-compact { padding-bottom: 16px; }
+
+  /* Bar charts */
+  .viz-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .viz-bar-label { width: 150px; flex-shrink: 0; font-size: 12.5px; color: var(--ink-soft); text-align: right; }
+  .viz-bar-track { flex: 1; height: 16px; background: #eef2f5; border-radius: 4px; position: relative; }
+  .viz-bar-fill { height: 100%; border-radius: 4px; min-width: 3px; }
+  .viz-bar-fill.fill-util { background: #2a78d6; }
+  .viz-bar-fill.fill-conflict { background: #d03b3b; }
+  .viz-bar-fill.fill-elevated { background: #6c5ce7; }
+  .viz-bar-fill.fill-routine { background: #9aa7b0; }
+  .viz-bar-value { width: 56px; flex-shrink: 0; font-size: 12.5px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .chart-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; }
+  .chart-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em; }
 </style>
 </head>
 <body>
+
+<!-- OCEAN-DEPTH READING GAUGE: descends through real oceanographic zones as the page scrolls -->
+<div class="depth-gauge" aria-hidden="true">
+  <div class="depth-gauge-track" id="depth-track">
+    <div class="depth-gauge-marker" id="depth-marker" style="top:0%"></div>
+  </div>
+</div>
+<div class="depth-gauge-label" id="depth-label">Sunlight Zone &middot; 0 m</div>
 
 <div style="width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column;">
 
@@ -38,12 +88,18 @@
   <div style="background: var(--navy-deep); padding: 64px 96px 32px; display: flex; flex-direction: column; gap: 16px;">
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #9fc3e0;">Project Overview &nbsp;&middot;&nbsp; WHOI Berth Reservation System</div>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <a class="navlink" href="#problems">Core Requirements</a>
-        <a class="navlink" href="#capabilities">Capabilities</a>
-        <a class="navlink" href="#priority">Priority Scheduling</a>
-        <a class="navlink" href="#findings">Data Findings</a>
-        <a class="navlink" href="#process">Process</a>
+      <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a class="navlink" href="#problems">Core Requirements</a>
+          <a class="navlink" href="#capabilities">Capabilities</a>
+          <a class="navlink" href="#priority">Priority Scheduling</a>
+          <a class="navlink" href="#findings">Data Findings</a>
+          <a class="navlink" href="#process">Process</a>
+        </div>
+        <div class="toggle" role="group" aria-label="Level of detail">
+          <button type="button" id="detail-summary-btn" onclick="setDetailLevel('summary')">Summary</button>
+          <button type="button" id="detail-full-btn" class="active" onclick="setDetailLevel('full')">Full Detail</button>
+        </div>
       </div>
     </div>
     <h1 style="font-size: 42px; font-weight: 600; color: #ffffff; max-width: 920px; line-height: 1.18; margin-top: 12px;">An Automated Reservation and Verification System for WHOI's Berths</h1>
@@ -75,6 +131,51 @@
     <div style="padding: 22px 12px; text-align: center;">
       <div style="font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: #ffffff;">21</div>
       <div style="font-size: 12px; color: #b7cfe4; margin-top: 4px;">automated tests</div>
+    </div>
+  </div>
+
+  <!-- WAVE DIVIDER: navy stat strip into the paper background below -->
+  <svg class="wave-divider" viewBox="0 0 1440 40" preserveAspectRatio="none" role="presentation">
+    <path d="M0,0 L1440,0 L1440,18 C1200,34 1080,6 840,16 C600,26 480,4 240,14 C120,19 60,12 0,20 Z" fill="var(--navy)"></path>
+  </svg>
+
+  <!-- DATA AT A GLANCE: REAL CHARTS -->
+  <div style="padding: 40px 96px 8px;">
+    <h2 style="font-size: 21px; font-weight: 600; color: var(--navy); margin-bottom: 16px;">Data at a Glance</h2>
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr 0.8fr; gap: 20px;">
+
+      <div class="chart-card">
+        <div class="chart-title">Berth Utilization</div>
+        <div class="viz-bar-row"><div class="viz-bar-label">North Pier West</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:90%"></div></div><div class="viz-bar-value">7.2%</div><div class="viz-bar-tooltip">North Pier West: 7.2%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">North Pier East</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:81%"></div></div><div class="viz-bar-value">6.5%</div><div class="viz-bar-tooltip">North Pier East: 6.5%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">South Float West</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:74%"></div></div><div class="viz-bar-value">5.9%</div><div class="viz-bar-tooltip">South Float West: 5.9%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">South Float East</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:58%"></div></div><div class="viz-bar-value">4.6%</div><div class="viz-bar-tooltip">South Float East: 4.6%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">Unidentified</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:19%"></div></div><div class="viz-bar-value">1.5%</div><div class="viz-bar-tooltip">Unidentified: 1.5%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">North Pier Face</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:19%"></div></div><div class="viz-bar-value">1.5%</div><div class="viz-bar-tooltip">North Pier Face: 1.5%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">Inner Channel</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:10%"></div></div><div class="viz-bar-value">0.8%</div><div class="viz-bar-tooltip">Inner Channel: 0.8%</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">North Finger Piers</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:5%"></div></div><div class="viz-bar-value">0.4%</div><div class="viz-bar-tooltip">North Finger Piers: 0.4%</div></div>
+        <div class="viz-bar-row" style="margin-bottom:0"><div class="viz-bar-label">Small craft slips</div><div class="viz-bar-track"><div class="viz-bar-fill fill-util" style="width:3%"></div></div><div class="viz-bar-value">0.2%</div><div class="viz-bar-tooltip">Small craft slips: 0.2%</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Double-Booked Days by Month</div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2008-08</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2008-08: 1 day</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2010-08</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2010-08: 1 day</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2011-08</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:100%"></div></div><div class="viz-bar-value">2 days</div><div class="viz-bar-tooltip">2011-08: 2 days</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2011-09</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2011-09: 1 day</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2013-02</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2013-02: 1 day</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2013-07</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2013-07: 1 day</div></div>
+        <div class="viz-bar-row"><div class="viz-bar-label">2015-06</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2015-06: 1 day</div></div>
+        <div class="viz-bar-row" style="margin-bottom:0"><div class="viz-bar-label">2015-07</div><div class="viz-bar-track"><div class="viz-bar-fill fill-conflict" style="width:50%"></div></div><div class="viz-bar-value">1 day</div><div class="viz-bar-tooltip">2015-07: 1 day</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Bookings by Priority</div>
+        <div class="viz-bar-row"><div class="viz-bar-label">Routine</div><div class="viz-bar-track"><div class="viz-bar-fill fill-routine" style="width:100%"></div></div><div class="viz-bar-value">1,390</div><div class="viz-bar-tooltip">Routine: 1,390</div></div>
+        <div class="viz-bar-row" style="margin-bottom:0"><div class="viz-bar-label">Elevated</div><div class="viz-bar-track"><div class="viz-bar-fill fill-elevated" style="width:62%"></div></div><div class="viz-bar-value">868</div><div class="viz-bar-tooltip">Elevated: 868</div></div>
+        <p class="detail-text" style="font-size: 12px; color: var(--ink-soft); margin-top: 16px; line-height: 1.5;">Elevated bookings are applied automatically to research vessels and Coast Guard cutters identified during import (see Priority-Aware Conflict Resolution, below).</p>
+      </div>
+
     </div>
   </div>
 
@@ -120,11 +221,11 @@
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px;">
         <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 8px;">Double-Booking Detection</h3>
-        <p style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">Every new reservation is checked against existing reservations on the same berth for overlapping dates. A conflicting request is rejected and identifies the specific reservation it collides with; the full history can also be re-audited on demand.</p>
+        <p class="detail-text" style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">Every new reservation is checked against existing reservations on the same berth for overlapping dates. A conflicting request is rejected and identifies the specific reservation it collides with; the full history can also be re-audited on demand.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px;">
         <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 8px;">Physical Fit Verification</h3>
-        <p style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">A vessel exceeding a berth's length is rejected outright; a berth offering less than the standard 10% clearance margin generates a warning. Beam and draft are checked the same way. When a dimension is unknown, the system states that explicitly rather than assuming a pass.</p>
+        <p class="detail-text" style="font-size: 14px; color: var(--ink-soft); line-height: 1.6;">A vessel exceeding a berth's length is rejected outright; a berth offering less than the standard 10% clearance margin generates a warning. Beam and draft are checked the same way. When a dimension is unknown, the system states that explicitly rather than assuming a pass.</p>
       </div>
     </div>
   </div>
@@ -137,47 +238,47 @@
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Berth Recommendation</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Ranks available, fitting berths by efficient use of space, favoring channel-adjacent berths for deep-draft vessels and easier-access berths for guest or novice crews.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Ranks available, fitting berths by efficient use of space, favoring channel-adjacent berths for deep-draft vessels and easier-access berths for guest or novice crews.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Utilization Dashboard</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Reports berth occupancy, double-booked days by month, and highest-usage vessels &mdash; visibility an audit list alone does not provide.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Reports berth occupancy, double-booked days by month, and highest-usage vessels &mdash; visibility an audit list alone does not provide.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Conflict Resolution Engine</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Resolves every outstanding conflict in a single pass using a proven scheduling algorithm that mathematically guarantees the best possible outcome, rather than correcting bookings one at a time.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Resolves every outstanding conflict in a single pass using a proven scheduling algorithm that mathematically guarantees the best possible outcome, rather than correcting bookings one at a time.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Full-History Search</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Locates a vessel or event by name across all 23 years and navigates directly to the matching record, without paging through individual months.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Locates a vessel or event by name across all 23 years and navigates directly to the matching record, without paging through individual months.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Bulk Dimension Import</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A CSV upload populates vessel length, beam, and draft by name. Verified in production use to reduce open fit-verification warnings from 31 to 1 on the initial data subset.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A CSV upload populates vessel length, beam, and draft by name. Verified in production use to reduce open fit-verification warnings from 31 to 1 on the initial data subset.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Interactive Schedule Grid</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The same berth-by-day layout staff have relied on, rebuilt as a working interface: select to book, select to inspect, conflicts flagged automatically.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The same berth-by-day layout staff have relied on, rebuilt as a working interface: select to book, select to inspect, conflicts flagged automatically.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Documented Override Workflow</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A booking that only trips a soft warning (marginal clearance, for example) can be approved deliberately rather than automatically blocked, and the system requires a stated reason, preserving a clear record of every exception.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A booking that only trips a soft warning (marginal clearance, for example) can be approved deliberately rather than automatically blocked, and the system requires a stated reason, preserving a clear record of every exception.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">RESTful API with Live Documentation</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Every function &mdash; booking, search, dimension import, conflict resolution &mdash; is exposed through a documented API with interactive, auto-generated reference documentation, so the system can integrate with other tools, not only its own interface.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Every function &mdash; booking, search, dimension import, conflict resolution &mdash; is exposed through a documented API with interactive, auto-generated reference documentation, so the system can integrate with other tools, not only its own interface.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Automatic Vessel Classification</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Vessel type is inferred directly from standard designation prefixes (research, fishing, motor, sailing, tug, barge) during import, populating the registry without manual data entry.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Vessel type is inferred directly from standard designation prefixes (research, fishing, motor, sailing, tug, barge) during import, populating the registry without manual data entry.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Repeatable, Non-Destructive Import</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Re-running the import against updated source records never creates a duplicate booking; existing data is checked before anything new is written, so the process can be run again at any time with no cleanup required.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Re-running the import against updated source records never creates a duplicate booking; existing data is checked before anything new is written, so the process can be run again at any time with no cleanup required.</p>
       </div>
       <div style="background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
         <h3 style="font-size: 15px; font-weight: 600;">Tidal and Maneuverability-Aware Placement</h3>
-        <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Berths are categorized by physical characteristics &mdash; channel-adjacent, T-head, alongside, inner &mdash; and both the recommendation and resolution engines factor these into placement, not length alone.</p>
+        <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Berths are categorized by physical characteristics &mdash; channel-adjacent, T-head, alongside, inner &mdash; and both the recommendation and resolution engines factor these into placement, not length alone.</p>
       </div>
     </div>
   </div>
@@ -188,8 +289,8 @@
       <div style="display: flex; flex-direction: column; gap: 14px;">
         <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #7fd4c0;">Capability Spotlight</div>
         <h2 style="font-size: 26px; font-weight: 600; color: #ffffff; line-height: 1.25;">Priority-Aware Conflict Resolution</h2>
-        <p style="font-size: 14.5px; color: #c9dced; line-height: 1.65;">Not all of WHOI's work carries equal operational stakes. A funded, time-boxed expedition &mdash; supporting ocean-climate solutions, deep-sea engineering, or ecological resilience research under initiatives such as the Campaign for Our Ocean Planet &mdash; is not interchangeable with a routine guest visit when a berth conflict has to be resolved. This system makes that distinction explicit rather than treating every reservation as equally displaceable.</p>
-        <p style="font-size: 14.5px; color: #c9dced; line-height: 1.65;">Every booking carries a priority tier. The conflict-resolution engine ranks priority ahead of reservation length: a two-day critical mission is protected over a twenty-one-day routine booking it conflicts with &mdash; the reverse of what a length-only rule would produce. This was confirmed both in isolated testing and against a live database, not assumed from the algorithm design alone.</p>
+        <p class="detail-text" style="font-size: 14.5px; color: #c9dced; line-height: 1.65;">Not all of WHOI's work carries equal operational stakes. A funded, time-boxed expedition &mdash; supporting ocean-climate solutions, deep-sea engineering, or ecological resilience research under initiatives such as the Campaign for Our Ocean Planet &mdash; is not interchangeable with a routine guest visit when a berth conflict has to be resolved. This system makes that distinction explicit rather than treating every reservation as equally displaceable.</p>
+        <p class="detail-text" style="font-size: 14.5px; color: #c9dced; line-height: 1.65;">Every booking carries a priority tier. The conflict-resolution engine ranks priority ahead of reservation length: a two-day critical mission is protected over a twenty-one-day routine booking it conflicts with &mdash; the reverse of what a length-only rule would produce. This was confirmed both in isolated testing and against a live database, not assumed from the algorithm design alone.</p>
         <div style="display: flex; gap: 28px; margin-top: 8px;">
           <div>
             <div style="font-family: 'Fraunces', serif; font-size: 26px; font-weight: 600; color: #ffffff;">868</div>
@@ -228,32 +329,32 @@
 
       <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Three header layouts, one parser</div>
-        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The month header, weekday row, and day-number row appear in three distinct arrangements across the workbook. The least common arrangement, where day numbers are embedded in the header itself, initially produced zero bookings for 15 of the 23 years.</div>
+        <div class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The month header, weekday row, and day-number row appear in three distinct arrangements across the workbook. The least common arrangement, where day numbers are embedded in the header itself, initially produced zero bookings for 15 of the 23 years.</div>
       </div>
 
       <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Unlabeled berth rows</div>
-        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Rows containing real bookings but no berth name were indistinguishable from a blank row marking the end of a month, causing the reservation to be dropped. These are now retained under an explicit "Unidentified" berth category.</div>
+        <div class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Rows containing real bookings but no berth name were indistinguishable from a blank row marking the end of a month, causing the reservation to be dropped. These are now retained under an explicit "Unidentified" berth category.</div>
       </div>
 
       <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Non-standard berth names</div>
-        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Two berths &mdash; "North Finger Piers" and "Small craft slips (institution boats)" &mdash; do not follow the standard "Name - Length" format. Six years of Finger Piers bookings were excluded from import before this was identified and corrected.</div>
+        <div class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Two berths &mdash; "North Finger Piers" and "Small craft slips (institution boats)" &mdash; do not follow the standard "Name - Length" format. Six years of Finger Piers bookings were excluded from import before this was identified and corrected.</div>
       </div>
 
       <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Misread month boundaries</div>
-        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A month header written without its year was not recognized as the end of the prior month's block, causing that header row to be misread as a berth &mdash; producing invalid entries literally named "July" and "August."</div>
+        <div class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">A month header written without its year was not recognized as the end of the prior month's block, causing that header row to be misread as a berth &mdash; producing invalid entries literally named "July" and "August."</div>
       </div>
 
       <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--navy);">A labeling error in the source</div>
-        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The 2010 tab's own November and December headers are mislabeled 2018, with vessel names positioned in what should be day-number cells. Accepting that row as valid produced incorrectly dated bookings and a fabricated vessel entry. A validation rule now requires day-numbering to begin at 1, rejecting the malformed row instead of guessing.</div>
+        <div class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">The 2010 tab's own November and December headers are mislabeled 2018, with vessel names positioned in what should be day-number cells. Accepting that row as valid produced incorrectly dated bookings and a fabricated vessel entry. A validation rule now requires day-numbering to begin at 1, rejecting the malformed row instead of guessing.</div>
       </div>
 
       <div style="display: grid; grid-template-columns: 250px 1fr; gap: 18px; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px;">
         <div style="font-size: 14px; font-weight: 600; color: var(--navy);">Operational notes recorded as vessels</div>
-        <div style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Scheduling notes and maintenance entries (arrival times, "Bollard replacement, west face," "Fueling @0800") were being recorded as vessel bookings. These are now correctly classified as operational events, not reservations.</div>
+        <div class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.55;">Scheduling notes and maintenance entries (arrival times, "Bollard replacement, west face," "Fueling @0800") were being recorded as vessel bookings. These are now correctly classified as operational events, not reservations.</div>
       </div>
 
     </div>
@@ -269,28 +370,28 @@
         <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
         <div>
           <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">Testing and Continuous Integration</h3>
-          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">Twenty-one automated tests were implemented, including a dedicated regression test for each finding above to prevent recurrence. A continuous integration pipeline runs the full suite on every change and identified a genuine configuration failure on its first execution.</p>
+          <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">Twenty-one automated tests were implemented, including a dedicated regression test for each finding above to prevent recurrence. A continuous integration pipeline runs the full suite on every change and identified a genuine configuration failure on its first execution.</p>
         </div>
       </div>
       <div style="display: flex; gap: 14px;">
         <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
         <div>
           <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">A Dedicated Review Pass</h3>
-          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">Once the core functionality was complete, a separate review removed unused code, consolidated a function call duplicated across four locations into a single reference, and eliminated redundant logic &mdash; before any further features were added.</p>
+          <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">Once the core functionality was complete, a separate review removed unused code, consolidated a function call duplicated across four locations into a single reference, and eliminated redundant logic &mdash; before any further features were added.</p>
         </div>
       </div>
       <div style="display: flex; gap: 14px;">
         <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
         <div>
           <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">Reproducible Setup</h3>
-          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">A single command takes a clean environment to a fully running application loaded with all 23 years of data. This was confirmed by removing the local environment entirely and rebuilding it from nothing.</p>
+          <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">A single command takes a clean environment to a fully running application loaded with all 23 years of data. This was confirmed by removing the local environment entirely and rebuilding it from nothing.</p>
         </div>
       </div>
       <div style="display: flex; gap: 14px;">
         <div style="width: 5px; border-radius: 3px; background: var(--accent); flex-shrink: 0;"></div>
         <div>
           <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">A Written Specification</h3>
-          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">A separate document records the problem statement, requirements with defined success criteria, real constraints, explicit assumptions, known limitations, and the method used to verify each component.</p>
+          <p class="detail-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;">A separate document records the problem statement, requirements with defined success criteria, real constraints, explicit assumptions, known limitations, and the method used to verify each component.</p>
         </div>
       </div>
     </div>
@@ -303,5 +404,58 @@
   </div>
 
 </div>
+
+<script>
+  function setDetailLevel(level) {
+    document.body.classList.toggle('detail-summary', level === 'summary');
+    document.getElementById('detail-summary-btn').classList.toggle('active', level === 'summary');
+    document.getElementById('detail-full-btn').classList.toggle('active', level === 'full');
+    try { localStorage.setItem('detailLevel', level); } catch (e) {}
+  }
+  (function () {
+    var saved;
+    try { saved = localStorage.getItem('detailLevel'); } catch (e) {}
+    if (saved === 'summary') setDetailLevel('summary');
+  })();
+
+  // Ocean-depth reading gauge: maps scroll progress onto WHOI's own
+  // oceanographic depth zones, so reading the page reads as a dive from
+  // the sunlit surface toward the abyss.
+  (function () {
+    var track = document.getElementById('depth-track');
+    var marker = document.getElementById('depth-marker');
+    var label = document.getElementById('depth-label');
+    if (!track || !marker || !label) return;
+
+    var ZONES = [
+      { max: 200, name: 'Sunlight Zone (Epipelagic)' },
+      { max: 1000, name: 'Twilight Zone (Mesopelagic)' },
+      { max: 4000, name: 'Midnight Zone (Bathypelagic)' },
+      { max: 6000, name: 'Abyssal Zone (Abyssopelagic)' }
+    ];
+    var MAX_DEPTH = 6000;
+
+    function update() {
+      var doc = document.documentElement;
+      var scrollable = doc.scrollHeight - window.innerHeight;
+      var pct = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0;
+      var depth = Math.round(pct * MAX_DEPTH);
+      var zone = ZONES.find(function (z) { return depth <= z.max; }) || ZONES[ZONES.length - 1];
+
+      var trackRect = track.getBoundingClientRect();
+      marker.style.top = (pct * trackRect.height) + 'px';
+      label.style.top = (trackRect.top + pct * trackRect.height) + 'px';
+      label.textContent = zone.name + ' · ' + depth.toLocaleString() + ' m';
+      label.classList.add('visible');
+
+      clearTimeout(update._hideTimer);
+      update._hideTimer = setTimeout(function () { label.classList.remove('visible'); }, 900);
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+</script>
 </body>
 </html>
