@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>WHOI Berth System — Interactive Overview</title>
+<title>WHOI Berth Reservation System</title>
 <meta name="description" content="Interactive dashboard for the WHOI berth reservation system, built on 23 years of real booking data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,8 +133,8 @@ footer { padding:26px 28px 60px; display:flex; justify-content:space-between; fl
 <div class="wrap">
   <header>
     <div class="eyebrow">WHOI Berth Reservation System</div>
-    <h1>An interactive look at 23 years of real dock bookings</h1>
-    <p class="tag">Toggle assumptions and watch the results change. Try booking a berth yourself. Everything below runs on the actual imported data — nothing here is staged.</p>
+    <h1>Booking a berth shouldn't take a spreadsheet and a headache</h1>
+    <p class="tag">This page is real, not a mockup — flip a switch below and watch the numbers change, or click into the demo and try booking something yourself. It's all running on 23 years of actual dock records.</p>
     <nav>
       <a class="navlink" href="#assumptions">Assumptions</a>
       <a class="navlink" href="#demo">Live Demo</a>
@@ -155,7 +155,7 @@ footer { padding:26px 28px 60px; display:flex; justify-content:space-between; fl
   <section id="assumptions">
     <div class="sec-head">
       <div>
-        <h2>Same data, different assumption — different answer</h2>
+        <h2>One small decision changes the whole answer</h2>
         <p class="sec-sub">One berth in the source data was never labeled. Whether you count it changes the conflict count entirely. This recomputes live, in your browser, over all 2,258 real bookings.</p>
       </div>
     </div>
@@ -179,8 +179,8 @@ footer { padding:26px 28px 60px; display:flex; justify-content:space-between; fl
   <section id="demo">
     <div class="sec-head">
       <div>
-        <h2>Try the booking system</h2>
-        <p class="sec-sub">September 1997, real data. Click an empty cell to book it — try overlapping an existing booking and watch the conflict get flagged instantly, the same check the live system runs.</p>
+        <h2>Go ahead, try booking something</h2>
+        <p class="sec-sub">This is September 1997, real data. Click an open day to book it. Try double-booking a day that's already taken and you'll see it get caught right away — the same check the real system runs every time.</p>
       </div>
       <span class="demo-note">Demo — changes aren't saved</span>
     </div>
@@ -192,13 +192,13 @@ footer { padding:26px 28px 60px; display:flex; justify-content:space-between; fl
   </section>
 
   <section id="capabilities">
-    <div class="sec-head"><div><h2>Capabilities</h2></div></div>
+    <div class="sec-head"><div><h2>What it can already do</h2></div></div>
     <div class="chip-grid" id="cap-grid"></div>
   </section>
 
   <section id="roadmap">
     <div class="sec-head">
-      <div><h2>Where this goes next</h2><p class="sec-sub">Scoped gaps, not vague ambition — each of these was found while building this, not invented for a roadmap slide.</p></div>
+      <div><h2>What I'd build next</h2><p class="sec-sub">Real gaps I ran into while building this — not a wishlist I made up for a slide.</p></div>
     </div>
     <div class="roadmap" id="roadmap-grid"></div>
   </section>
