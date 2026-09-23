@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>WHOI Berth Reservation System</title>
+<title>WHOI Berths</title>
 <meta name="description" content="Interactive dashboard for the WHOI berth reservation system, built on 23 years of real booking data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,12 +132,12 @@ footer { padding:26px 28px 60px; display:flex; justify-content:space-between; fl
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">WHOI Berth Reservation System</div>
-    <h1>Booking a berth shouldn't take a spreadsheet and a headache</h1>
-    <p class="tag">This page is real, not a mockup — flip a switch below and watch the numbers change, or click into the demo and try booking something yourself. It's all running on 23 years of actual dock records.</p>
+    <div class="eyebrow">WHOI BERTHS</div>
+    <h1>Find a berth. Book it. Done.</h1>
+    <p class="tag">Real data, not a mockup. Try it below.</p>
     <nav>
+      <a class="navlink" href="#demo">Try Booking</a>
       <a class="navlink" href="#assumptions">Assumptions</a>
-      <a class="navlink" href="#demo">Live Demo</a>
       <a class="navlink" href="#capabilities">Capabilities</a>
       <a class="navlink" href="#roadmap">Roadmap</a>
     </nav>
@@ -152,53 +152,53 @@ footer { padding:26px 28px 60px; display:flex; justify-content:space-between; fl
     <div class="stat"><div class="n">21</div><div class="l">tests</div></div>
   </div>
 
+  <section id="demo">
+    <div class="sec-head">
+      <div>
+        <h2>Try booking a berth</h2>
+        <p class="sec-sub">September 1997. Click an open day. Double-book one and watch it get caught.</p>
+      </div>
+      <span class="demo-note">Demo — nothing is saved</span>
+    </div>
+    <div class="demo-wrap"><div id="demo-grid"></div></div>
+    <div class="demo-controls">
+      <button class="chip primary" id="demo-reset">Reset demo</button>
+      <span style="font-size:11.5px;color:var(--text-tertiary);align-self:center;">Full version (search, audit, priority): <a href="https://github.com/sofiagn05/whoi-berth-system">the real app</a></span>
+    </div>
+  </section>
+
   <section id="assumptions">
     <div class="sec-head">
       <div>
-        <h2>One small decision changes the whole answer</h2>
-        <p class="sec-sub">One berth in the source data was never labeled. Whether you count it changes the conflict count entirely. This recomputes live, in your browser, over all 2,258 real bookings.</p>
+        <h2>One decision changes the count</h2>
+        <p class="sec-sub">Toggle it and watch the number move.</p>
       </div>
     </div>
     <div class="assume-panel">
       <div class="assume-row">
         <div class="switch" id="assume-switch">
           <button data-mode="include" class="active">Include unlabeled berth</button>
-          <button data-mode="exclude">Only correctly-labeled berths</button>
+          <button data-mode="exclude">Only labeled berths</button>
         </div>
       </div>
       <div class="assume-grid">
         <div>
-          <div class="result-big"><span class="num" id="conflict-num">9</span><span class="label">double-booking pairs found</span></div>
-          <p class="assume-explain" id="assume-explain">Includes a catch-all "Unidentified" berth for rows the original spreadsheet never named — two bookings landing there on the same day count as a conflict, even though they may have been on two different physical berths.</p>
+          <div class="result-big"><span class="num" id="conflict-num">9</span><span class="label">double-booking pairs</span></div>
+          <p class="assume-explain" id="assume-explain">"Unidentified" wasn't a real berth name in the source data.</p>
         </div>
         <div class="mini-bars" id="util-bars"></div>
       </div>
     </div>
   </section>
 
-  <section id="demo">
-    <div class="sec-head">
-      <div>
-        <h2>Go ahead, try booking something</h2>
-        <p class="sec-sub">This is September 1997, real data. Click an open day to book it. Try double-booking a day that's already taken and you'll see it get caught right away — the same check the real system runs every time.</p>
-      </div>
-      <span class="demo-note">Demo — changes aren't saved</span>
-    </div>
-    <div class="demo-wrap"><div id="demo-grid"></div></div>
-    <div class="demo-controls">
-      <button class="chip primary" id="demo-reset">Reset demo</button>
-      <span style="font-size:11.5px;color:var(--text-tertiary);align-self:center;">Full working version (persists, has search/audit/resolver/priority): <a href="https://github.com/sofiagn05/whoi-berth-system">the actual app</a></span>
-    </div>
-  </section>
-
   <section id="capabilities">
-    <div class="sec-head"><div><h2>What it can already do</h2></div></div>
+    <div class="sec-head"><div><h2>What it can do</h2></div></div>
     <div class="chip-grid" id="cap-grid"></div>
   </section>
 
   <section id="roadmap">
     <div class="sec-head">
-      <div><h2>What I'd build next</h2><p class="sec-sub">Real gaps I ran into while building this — not a wishlist I made up for a slide.</p></div>
+      <div><h2>What's next</h2></div>
     </div>
     <div class="roadmap" id="roadmap-grid"></div>
   </section>
@@ -258,8 +258,8 @@ function setAssumption(mode){
   numEl.textContent = n;
   numEl.style.color = n>0 ? 'var(--red)' : 'var(--green)';
   document.getElementById('assume-explain').textContent = mode==='include'
-    ? 'Includes a catch-all "Unidentified" berth for rows the original spreadsheet never named — two bookings landing there on the same day count as a conflict, even though they may have been on two different physical berths.'
-    : 'Excludes that catch-all berth entirely. Every berth with an actual name and length is conflict-free across all 23 years — the manual process worked when a berth was written down at all.';
+    ? '"Unidentified" catches rows the spreadsheet never named.'
+    : 'Every named berth: zero conflicts, 23 years straight.';
   renderUtilBars(exclude);
 }
 document.getElementById('assume-switch').addEventListener('click', e => {
@@ -349,27 +349,27 @@ function onCellClick(berth, day){
 
 // ---------- Capabilities + roadmap (concise) ----------
 const CAPS = [
-  ['Double-booking detection','Rejects on write, re-audits full history on demand'],
-  ['Physical fit checks','Length/beam/draft, 10% clearance rule, explicit "unknown"'],
-  ['Berth recommendation','Ranks by fit + draft/maneuverability heuristics'],
-  ['Conflict resolver','Optimal weighted-interval scheduling, priority-first'],
-  ['Priority scheduling','Critical missions protected over longer routine bookings'],
-  ['Full-history search','Find any vessel across 23 years instantly'],
-  ['Bulk dimension import','CSV upload fills in missing vessel data'],
-  ['Override workflow','Force a warning through with a required, logged reason'],
-  ['REST API + docs','Every function scriptable, auto-generated reference'],
-  ['Auto vessel classification','Type inferred from prefix on import'],
-  ['Idempotent import','Re-run anytime, never duplicates'],
-  ['Tidal-aware placement','Channel/T-head/inner factored into suggestions'],
+  ['Double-booking detection','Flags overlaps instantly'],
+  ['Physical fit checks','Length, beam, draft — checked'],
+  ['Berth recommendation','Suggests the best fit'],
+  ['Conflict resolver','Auto-reassigns by priority'],
+  ['Priority scheduling','Critical work comes first'],
+  ['Full-history search','Any vessel, 23 years, instant'],
+  ['Bulk dimension import','Upload a CSV, done'],
+  ['Override workflow','Force it through, with a reason'],
+  ['REST API + docs','Fully scriptable'],
+  ['Auto vessel classification','Type detected on import'],
+  ['Idempotent import','Re-run anytime, no duplicates'],
+  ['Tidal-aware placement','Factors in channel & tide'],
 ];
 document.getElementById('cap-grid').innerHTML = CAPS.map(([t,d]) =>
   `<div class="cap-chip"><div class="t">${t}</div><div class="d">${d}</div></div>`).join('');
 
 const ROADMAP = [
-  ['not started','purple','Vessel registry parsing','Real LOA/draft data sits in the source workbook\'s Science/Yachts tabs, unparsed.'],
-  ['unresolved','amber','The "Marsh Landing" mystery','A summary tab references a berth that never appears in any year\'s actual grid.'],
-  ['flagged','blue','~61 ambiguous rows','Sit between month blocks with no reliable date — currently dropped, not guessed.'],
-  ['planned','teal','Multi-user + auth','No login or write-locking yet — single dock-coordinator workflow today.'],
+  ['not started','purple','Vessel registry parsing','Real dimensions, still unparsed'],
+  ['unresolved','amber','The "Marsh Landing" mystery','A berth that shows up nowhere'],
+  ['flagged','blue','~61 ambiguous rows','Dropped, not guessed at'],
+  ['planned','teal','Multi-user + auth','One coordinator, for now'],
 ];
 document.getElementById('roadmap-grid').innerHTML = ROADMAP.map(([status,color,t,d]) =>
   `<div class="road-card" style="--accent:var(--${color})"><div class="status">${status}</div><div class="t">${t}</div><div class="d">${d}</div></div>`).join('');
