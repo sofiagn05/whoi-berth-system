@@ -9,7 +9,10 @@ grid for overlaps or guessing whether a boat will actually fit.
 
 See [SPEC.md](SPEC.md) for the problem statement, requirements and success
 criteria, constraints, assumptions, and — for every piece of logic below —
-exactly how it was validated, not just asserted to work.
+exactly how it was validated, not just asserted to work. Or skip the
+reading entirely: **[live interactive dashboard](https://sofiagn05.github.io/whoi-berth-system/)**
+— toggle real assumptions and watch results recompute, try booking a
+berth yourself.
 
 **Data provenance.** The prompt for this project stated: *"A sample
 schedule is attached to this email, containing 23 years of bookings."*
